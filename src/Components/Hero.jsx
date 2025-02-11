@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 function Hero() {
+	const [specimenType, setSpecimenType] = useState("");
 	const [patientType, setPatientType] = useState("");
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
@@ -47,7 +48,7 @@ function Hero() {
 				>
 					<div className="mt-4 flex flex-col gap-4">
 						{/* Dropdown for Type of Patient */}
-						<p className="text-white text-xl">Enter Type of Patient</p>
+						<p className="text-white text-xl -mt-6">Enter Type of Patient</p>
 						<select
 							value={patientType}
 							onChange={(e) => setPatientType(e.target.value)}
@@ -60,8 +61,33 @@ function Hero() {
 							<option value="OPD">OPD</option>
 						</select>
 
+						{/* Dropdown for Type of Specimen */}
+						<p className="text-white text-xl mt-4">Enter Type of Specimen</p>
+						<select
+							value={specimenType}
+							onChange={(e) => setSpecimenType(e.target.value)}
+							className="p-2 border rounded-md text-gray-700"
+						>
+							<option value="" disabled>
+								Select Specimen
+							</option>
+							<option value="Urine">Urine</option>
+							<option value="Stool" disabled>
+								Stool
+							</option>
+							<option value="Blood" disabled>
+								Blood
+							</option>
+							<option value="Swab" disabled>
+								Swab
+							</option>
+							<option value="Pus" disabled>
+								Pus
+							</option>
+						</select>
+
 						{/* Dropdown for Gender */}
-						<p className="text-white text-xl mt-8">Enter Gender of Patient</p>
+						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
 						<select
 							value={gender}
 							onChange={(e) => setGender(e.target.value)}
@@ -75,7 +101,7 @@ function Hero() {
 						</select>
 
 						{/* Input for Age */}
-						<p className="text-white text-xl mt-8">Enter Age of Patient</p>
+						<p className="text-white text-xl mt-4">Enter Age of Patient</p>
 						<input
 							type="number"
 							value={age}
@@ -88,7 +114,7 @@ function Hero() {
 						{/* Submit Button */}
 						<button
 							onClick={handleSubmit}
-							className="mt-10 p-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+							className="mt-8 p-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
 						>
 							Submit Info
 						</button>
