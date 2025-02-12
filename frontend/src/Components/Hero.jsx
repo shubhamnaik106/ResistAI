@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import axios from "axios";
 function Hero() {
 	const [specimenType, setSpecimenType] = useState("");
 	const [patientType, setPatientType] = useState("");
@@ -7,7 +7,7 @@ function Hero() {
 	const [age, setAge] = useState("");
 	const [displayText, setDisplayText] = useState("Recommendations !!!");
 
-	const handleSubmit = () => {
+	const handleSubmit = async() => {
 		if (!patientType || !gender || !age) {
 			alert("Please fill in all the fields before submitting.");
 			return;
@@ -18,19 +18,46 @@ function Hero() {
 			return;
 		}
 
-		setDisplayText(
-			<div>
-				<p className="mr-4 mb-4">
-					Predicted Culture/Bacteria : Escherichia coli
-				</p>
-				<p className="mb-4">Recommended Antibiotic Class : PENICILLINS</p>
-				<p className="mr-36 mb-2">Recommended Antibiotics :</p>
-				<p>Oxacillian (92.8% Accuracy) (Safe for Children, Pregnant Woman)</p>
-				<p>Ticarcillian (85.2% Accuracy) (Safe for Children, Pregnant Woman)</p>
-				<p>Ampicillin (81.9% Accuracy) (Safe for Children, Pregnant Woman)</p>
-			</div>
-		);
-	};
+        try {
+            // Send POST request to Flask backend
+            const response = await axios.post("http://localhost:5005/", {
+                type: patientType,
+                specimenType: specimenType,
+                gender: gender,
+                age: age
+            });
+
+            // Display the prediction result
+            setDisplayText(
+				<div className="overflow-auto max-h-96">
+					<h2 className="text-2xl font-bold mb-4">Prediction Results</h2>
+					<table className="min-w-full bg-white border border-gray-300">
+						<thead className="bg-gray-200">
+							<tr>
+								<th className="py-2 px-4 border-b">Antibiotic</th>
+								<th className="py-2 px-4 border-b">Resistance Status</th>
+								<th className="py-2 px-4 border-b">Accuracy (%)</th>
+								<th className="py-2 px-4 border-b">Sensitivity (%)</th>
+							</tr>
+						</thead>
+						<tbody>
+							{response.data.predictions.map((item, index) => (
+								<tr key={index} className="hover:bg-gray-100">
+									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
+									<td className="py-2 px-4 border-b">{item.resistance_status}</td>
+									<td className="py-2 px-4 border-b">{item.accuracy}</td>
+									<td className="py-2 px-4 border-b">{item.sensitivity}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			);
+        } catch (error) {
+            console.error("Error making prediction:", error);
+            alert("An error occurred while processing your request.");
+        }
+    };
 
 	return (
 		<>
