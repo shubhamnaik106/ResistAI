@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 CORS(app)
 def train_and_evaluate_model():
-    data = pd.read_excel('C:/Users/Steph/Antibiotic Resistance/Urine Dataset.xlsx')
+    data = pd.read_excel('E:/machine learning datasets/Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     

@@ -31,8 +31,8 @@ function Hero() {
             setDisplayText(
 				<div className="overflow-auto max-h-96">
 					<h2 className="text-2xl font-bold mb-4">Prediction Results</h2>
-					<table className="min-w-full bg-white border border-gray-300">
-						<thead className="bg-gray-200">
+					<table className="min-w-full bg-white border border-gray-300 ">
+						<thead className="bg-gray-200 text-black">
 							<tr>
 								<th className="py-2 px-4 border-b">Antibiotic</th>
 								<th className="py-2 px-4 border-b">Resistance Status</th>
@@ -42,7 +42,7 @@ function Hero() {
 						</thead>
 						<tbody>
 							{response.data.predictions.map((item, index) => (
-								<tr key={index} className="hover:bg-gray-100">
+								<tr key={index} className="hover:bg-gray-100 text-black">
 									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
 									<td className="py-2 px-4 border-b">{item.resistance_status}</td>
 									<td className="py-2 px-4 border-b">{item.accuracy}</td>
