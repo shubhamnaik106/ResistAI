@@ -13,8 +13,8 @@ function Hero() {
 			return;
 		}
 
-		if (age <= 0) {
-			alert("Age must be greater than 0.");
+		if (age <= 0 || age >100) {
+			alert("Age must range from 0-100.");
 			return;
 		}
 
