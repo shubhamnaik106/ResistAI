@@ -79,7 +79,7 @@ function Hero() {
 						<select
 							value={patientType}
 							onChange={(e) => setPatientType(e.target.value)}
-							className="p-2 border rounded-md text-gray-700"
+							className="p-3  rounded-md text-orange-500 backdrop-blur-sm bg-orange-500 bg-opacity-10"
 						>
 							<option value="" disabled>
 								Select Type
@@ -93,7 +93,7 @@ function Hero() {
 						<select
 							value={specimenType}
 							onChange={(e) => setSpecimenType(e.target.value)}
-							className="p-2 border rounded-md text-gray-700"
+							className="p-3  rounded-md text-orange-500 backdrop-blur-sm bg-orange-500 bg-opacity-10"
 						>
 							<option value="" disabled>
 								Select Specimen
@@ -118,7 +118,7 @@ function Hero() {
 						<select
 							value={gender}
 							onChange={(e) => setGender(e.target.value)}
-							className="p-2 border rounded-md text-gray-700"
+							className="p-3  rounded-md text-orange-500 backdrop-blur-sm bg-orange-500 bg-opacity-10"
 						>
 							<option value="" disabled>
 								Select Gender
@@ -133,17 +133,18 @@ function Hero() {
 							type="number"
 							value={age}
 							onChange={(e) => setAge(e.target.value)}
-							placeholder="Age (Years)"
-							className="p-2 border rounded-md"
+							placeholder="Enter Age"
+							className="p-3  rounded-md text-orange-500 backdrop-blur-sm bg-orange-500 bg-opacity-10"
 							min="1"
+							max="100"
 						/>
 
 						{/* Submit Button */}
 						<button
 							onClick={handleSubmit}
-							className="mt-8 p-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+							className="text-white bg-orange-500 mt-8 py-3 transition-transform duration-500 hover:scale-110 border-[2px] border-transparent  hover:border-[2px] hover:bg-orange-500 hover:border-white rounded-full text-[15px] px-6 py-1 cursor-pointer"
 						>
-							Submit Info
+							Get Recommendations
 						</button>
 					</div>
 				</div>
