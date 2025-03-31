@@ -11,7 +11,7 @@ from sklearn.linear_model import LogisticRegression
 from flask_cors import CORS
 app = Flask(__name__)
 
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5000"}})
 def train_XGB():
     data = pd.read_excel('Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
@@ -62,7 +62,7 @@ def train_LR():
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), ['Age']),
-            ('cat', OneHotEncoder(), ['Sex', 'Specimen_Type'])
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type'])
         ]
     )
     
@@ -96,14 +96,14 @@ lr_pipeline, lr_target_colume, lr_metrics = train_LR()
 @app.route("/", methods=["POST"])
 def predict():
     data = request.get_json()
-    model_type = 'LR' #LR or XGB
+    model_type = 'lr' #LR or XGB
     new_patient = pd.DataFrame({
         'Sex': [data['gender']],
         'Age': [data['age']],
-        'Specimen_Type': [data['specimenType']]
+        'Specimen_Type': [data['specimenType'].strip().lower()]
     })
     if model_type == 'lr':
-        pipeline, target_columns, metrics = lr_pipeline, lr_columns, lr_metrics
+        pipeline, target_columns, metrics = lr_pipeline, lr_target_colume, lr_metrics
     else:
         pipeline, target_columns, metrics = xgb_pipeline, xgb_columns, xgb_metrics
 
