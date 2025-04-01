@@ -5,5 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [ react()],
-  base:"/ResistAI/"
+  base:"/ResistAI/",
+  server: {
+    host: true, // Allow access from network devices over-local ip
+    port: 5000  // You can change this to any other port if needed
+  }
 })

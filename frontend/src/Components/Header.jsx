@@ -18,7 +18,7 @@ function Header() {
 			title: (
 				<a
 					href="#sectionh"
-					className="text-orange-500 font-normal hover:text-white"
+					className="text-white font-normal hover:text-white"
 				>
 					HOME
 				</a>
@@ -29,7 +29,7 @@ function Header() {
 			title: (
 				<a
 					href="#sectionp"
-					className="text-orange-500 font-normal hover:text-white"
+					className="text-white font-normal hover:text-white"
 				>
 					TRENDS
 				</a>
@@ -40,7 +40,7 @@ function Header() {
 			title: (
 				<a
 					href="#sectiona"
-					className="text-orange-500 font-normal hover:text-white"
+					className="text-white font-normal hover:text-white"
 				>
 					ABOUT
 				</a>
@@ -56,7 +56,7 @@ function Header() {
 	return (
 		<>
 			<div className="flex items-center justify-end md:justify-center sticky top-0 pt-5 z-10">
-				<p className="text-amber-500 text-5xl font-bold mr-auto"> ResistAI </p>
+				<p className="text-orange-500 text-5xl  font-bold mr-auto"> ResistAI </p>
 				<div className="hidden md:flex gap-4 backdrop-blur-lg bg-white shadow-xl sm:rounded-3xl py-2 px-4 bg-clip-padding bg-opacity-10 ">
 					{menuList.map((item, index) => (
 						<div key={index}>

@@ -6,9 +6,10 @@ function App() {
 	return (
 		<div
 			id="sectionh"
-			className="min-h-[100vh] bg-gradient-to-r from-black   to-black px-8 md:px-14 lg:px-36 pb-10 bg-fixed"
+			className="min-h-[100vh] bg-gradient-to-tr from-black via-black to-orange-900 px-8 md:px-14 lg:px-36 pb-10 bg-fixed"
 		>
 			<Header />
+
 			<Hero />
 		</div>
 	);
