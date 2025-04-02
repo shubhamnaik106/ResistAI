@@ -110,11 +110,16 @@ def predict():
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
     resistance_status = []
+    resistance_R = []
+    sensitive_S = []
+    total = []
     for col in target_columns:
         status = "Resistant" if prediction[col] == 1 else "Sensitive"
         resistance_status.append({
             "antibiotic": col, 
-            "resistance_status": status
+            "resistance_status": status,
+            "resistance": resistance_R,
+            "sensitve" : sensitive_S
         })
 
     return jsonify({"predictions": resistance_status})

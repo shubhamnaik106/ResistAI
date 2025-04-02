@@ -35,9 +35,9 @@ function Hero() {
 						<thead className="bg-gray-200 text-black">
 							<tr>
 								<th className="py-2 px-4 border-b">Antibiotic</th>
-								<th className="py-2 px-4 border-b">Resistance Status</th>
-								<th className="py-2 px-4 border-b">Accuracy (%)</th>
-								{/* <th className="py-2 px-4 border-b">Sensitivity (%)</th> */}
+								<th className="py-2 px-4 border-b">Status</th>
+								<th className="py-2 px-4 border-b">Resistance (%)</th>
+								<th className="py-2 px-4 border-b">Sensitive (%)</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -47,8 +47,8 @@ function Hero() {
 									<td className="py-2 px-4 border-b">
 										{item.resistance_status}
 									</td>
-									<td className="py-2 px-4 border-b">{item.accuracy}</td>
-									{/* <td className="py-2 px-4 border-b">{item.sensitivity}</td> */}
+									<td className="py-2 px-4 border-b">{item.resistance}</td>
+									 <td className="py-2 px-4 border-b">{item.sensitive}</td>
 								</tr>
 							))}
 						</tbody>
