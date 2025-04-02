@@ -96,33 +96,97 @@ lr_pipeline, lr_target_colume, lr_metrics = train_LR()
 @app.route("/", methods=["POST"])
 def predict():
     data = request.get_json()
-    model_type = 'lr' #LR or XGB
+    print("Received JSON Data:", data)
+    
+    model_type = 'lr'  # Model selection
+    
+    # Map gender to match dataset values
+    sex_mapping = {'Male': '1', 'Female': '0'}
+    new_gen = sex_mapping.get(data['gender'], 'Unknown')
+    
+    
     new_patient = pd.DataFrame({
-        'Sex': [data['gender']],
+        'Sex': [new_gen],
         'Age': [data['age']],
-        'Specimen_Type': [data['specimenType'].strip().lower()]
+        'Specimen_Type': [data['specimenType'].strip().upper()]
     })
+    
+    
+    # Convert data types
+    new_patient['Age'] = pd.to_numeric(new_patient['Age'], errors='coerce')
+    new_patient['Sex'] = new_patient['Sex'].astype(str)
+    #print("New Patient Data Types:\n", new_patient.dtypes)
+    
+    # Check for NaN values
+    if new_patient.isnull().values.any():
+        print("ERROR: NaN values detected in new_patient DataFrame!")
+        print(new_patient)
+        return jsonify({"error": "Invalid input data (contains NaN)."})
+    
+    # Select the model pipeline
     if model_type == 'lr':
         pipeline, target_columns, metrics = lr_pipeline, lr_target_colume, lr_metrics
     else:
         pipeline, target_columns, metrics = xgb_pipeline, xgb_columns, xgb_metrics
-
+    
+    # Perform prediction
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
+    #print("Target Columns:", target_columns)
+    #print("Prediction Dictionary:", prediction)
+    
+    # Load dataset
+    dataset = pd.read_excel('Urine Dataset.xlsx')
+    
+    
+    # Convert dataset columns to standard types
+    dataset['Sex'] = dataset['Sex'].astype(str)
+    dataset['Specimen_Type'] = dataset['Specimen_Type'].str.strip().str.upper()
+    dataset['Age'] = pd.to_numeric(dataset['Age'], errors='coerce')
+    
+    #print("Dataset Head (after standardization):\n", dataset.head())
+    #print("Dataset Data Types:\n", dataset.dtypes)
+    
+    # Debugging: Check unique values in dataset
+    #print("Checking mismatches...")
+    #print("Unique dataset Sex values:", dataset['Sex'].unique())
+    #print("Unique dataset Specimen_Type values:", dataset['Specimen_Type'].unique())
+    #print("Min and Max Age in dataset:", dataset['Age'].min(), dataset['Age'].max())
+    
+    # Filter dataset for matching values
+    print("Filtering dataset for matching values...")
+    filtered_dataset = dataset[
+        (dataset['Sex'] == new_patient['Sex'].values[0]) &
+        (dataset['Age'] == new_patient['Age'].values[0]) &
+        (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])
+    ]
+    
+    if filtered_dataset.empty: #or filtered_dataset.shape[0] <30
+        print("No matching data found for the given input! or insuffitient data for predictions")
+        return jsonify({"error": "No matching data found for given input. or insuffitient data for predictions"})
+    
+    
     resistance_status = []
-    resistance_R = []
-    sensitive_S = []
-    total = []
     for col in target_columns:
+        total_resistant = (filtered_dataset[col] == -1).sum()
+        total_sensitive = (filtered_dataset[col] == 1).sum()
+        total_valid = total_resistant + total_sensitive
+        
+        resistance_R = ((total_resistant / total_valid) * 100) if total_valid > 0 else 0
+        sensitive_S = ((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
+        
         status = "Resistant" if prediction[col] == 1 else "Sensitive"
         resistance_status.append({
-            "antibiotic": col, 
+            "antibiotic": col,
             "resistance_status": status,
-            "resistance": resistance_R,
-            "sensitve" : sensitive_S
+            "resistance": round(resistance_R, 2),
+            "sensitive": round(sensitive_S, 2)
         })
-
+    
     return jsonify({"predictions": resistance_status})
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5005)
