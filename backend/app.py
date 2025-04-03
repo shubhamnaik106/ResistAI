@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.multioutput import MultiOutputClassifier
@@ -170,20 +171,49 @@ def predict():
     for col in target_columns:
         total_resistant = (filtered_dataset[col] == -1).sum()
         total_sensitive = (filtered_dataset[col] == 1).sum()
-        total_valid = total_resistant + total_sensitive
+        total_notused = (filtered_dataset[col] == 0).sum()
+        total_valid = total_resistant + total_sensitive +  total_notused
         
         resistance_R = ((total_resistant / total_valid) * 100) if total_valid > 0 else 0
         sensitive_S = ((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
+        notused_N = ((total_notused / total_valid) * 100) if total_valid > 0 else 0
         
-        status = "Resistant" if prediction[col] == 1 else "Sensitive"
+         # Correct resistance status logic
+        if prediction[col] == 1:
+            status = "Sensitive"
+        elif prediction[col] == 0:
+            status = "Not Used"
+        else:
+            status = "Resistant"
+
         resistance_status.append({
             "antibiotic": col,
             "resistance_status": status,
             "resistance": round(resistance_R, 2),
-            "sensitive": round(sensitive_S, 2)
+            "sensitive": round(sensitive_S, 2),
+            "notused": round(notused_N, 2),
+            "total_resistant_patients": total_resistant,  
+            "total_sensitive_patients": total_sensitive,  
+            "total_notused_patients": total_notused
         })
-    
-    return jsonify({"predictions": resistance_status})
+        def convert_numpy(obj):
+        #Recursively convert numpy types to native Python types
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()  # Convert NumPy arrays to lists
+            elif isinstance(obj, dict):
+                return {key: convert_numpy(value) for key, value in obj.items()}  # Convert dictionaries
+            elif isinstance(obj, list):
+                return [convert_numpy(item) for item in obj]  # Convert lists
+            else:
+                return obj
+        
+    json_serializable_data = convert_numpy(resistance_status)
+
+    return jsonify({"predictions": json_serializable_data})
 
 
 
