@@ -13,7 +13,7 @@ function Hero() {
 			return;
 		}
 
-		if (age <= 0 || age >100) {
+		if (age <= 0 || age > 100) {
 			alert("Age must range from 0-100.");
 			return;
 		}
@@ -48,7 +48,7 @@ function Hero() {
 										{item.resistance_status}
 									</td>
 									<td className="py-2 px-4 border-b">{item.resistance}</td>
-									 <td className="py-2 px-4 border-b">{item.sensitive}</td>
+									<td className="py-2 px-4 border-b">{item.sensitive}</td>
 								</tr>
 							))}
 						</tbody>
