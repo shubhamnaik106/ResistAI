@@ -144,7 +144,7 @@ function Hero() {
 						{/* Submit Button */}
 						<button
 							onClick={handleSubmit}
-							className="text-white bg-orange-500 mt-8 transition-transform duration-500 hover:scale-110 border-[2px] border-transparent  hover:border-[2px] hover:bg-orange-500 hover:border-white rounded-full text-[15px] px-6 py-1 cursor-pointer"
+							className="text-white bg-orange-500 mt-8 py-3 transition-transform duration-500 hover:scale-110 border-[2px] border-transparent  hover:border-[2px] hover:bg-orange-500 hover:border-white rounded-full text-[15px] px-6 py-1 cursor-pointer"
 						>
 							Get Recommendations
 						</button>
