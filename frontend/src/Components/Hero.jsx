@@ -8,10 +8,16 @@ function Hero() {
   const [age, setAge] = useState("");
   const [displayText, setDisplayText] = useState("Loading recommendations...");
 
-  const handleSubmit = async () => {
-    if (!patientType || !gender || !age) {
-      console.warn("Missing fields; using default values for demo.");
-    }
+	const handleSubmit = async () => {
+		if (!patientType || !gender || !age) {
+			alert("Please fill in all the fields before submitting.");
+			return;
+		}
+
+		if (age <= 0 || age > 100) {
+			alert("Age must range from 0-100.");
+			return;
+		}
 
     try {
       const response = await axios.post("http://localhost:5005/", {
@@ -21,41 +27,39 @@ function Hero() {
         age: age,
       });
 
-      setDisplayText(
-        <div className="overflow-auto max-h-96">
-          <h2 className="text-2xl font-bold mb-4 text-white">Prediction Results</h2>
-          <table className="min-w-full md:mb-0 mb- bg-transparent border border-orange-500 rounded-lg">
-            <thead className="bg-white bg-opacity-10 text-white">
-              <tr>
-                <th className="py-2 px-4 border-b border-orange-500">Antibiotic</th>
-                <th className="py-2 px-4 border-b border-orange-500">Status</th>
-                <th className="py-2 px-4 border-b border-orange-500">Resistance (%)</th>
-                <th className="py-2 px-4 border-b border-orange-500">Sensitive (%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {response.data.predictions.slice(0, 5).map((item, index) => (
-                <tr key={index} className="hover:bg-white hover:bg-opacity-20 text-white">
-                  <td className="py-2 px-4 border-b border-orange-500">{item.antibiotic}</td>
-                  <td className="py-2 px-4 border-b border-orange-500">{item.resistance_status}</td>
-                  <td className="py-2 px-4 border-b border-orange-500">{item.resistance}</td>
-                  <td className="py-2 px-4 border-b border-orange-500">{item.sensitive}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    } catch (error) {
-      console.error("Error making prediction:", error);
-      alert("An error occurred while processing your request.");
-    }
-  };
-
-  // Call handleSubmit on component mount.
-  useEffect(() => {
-    handleSubmit();
-  }, []);
+			// Display the prediction result
+			setDisplayText(
+				<div className="overflow-auto max-h-96">
+					<h2 className="text-2xl font-bold mb-4">Prediction Results</h2>
+					<table className="min-w-full bg-white border border-gray-300 ">
+						<thead className="bg-gray-200 text-black">
+							<tr>
+								<th className="py-2 px-4 border-b">Antibiotic</th>
+								<th className="py-2 px-4 border-b">Status</th>
+								<th className="py-2 px-4 border-b">Resistance (%)</th>
+								<th className="py-2 px-4 border-b">Sensitive (%)</th>
+							</tr>
+						</thead>
+						<tbody>
+							{response.data.predictions.map((item, index) => (
+								<tr key={index} className="hover:bg-gray-100 text-black">
+									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
+									<td className="py-2 px-4 border-b">
+										{item.resistance_status}
+									</td>
+									<td className="py-2 px-4 border-b">{item.resistance}</td>
+									 <td className="py-2 px-4 border-b">{item.sensitive}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			);
+		} catch (error) {
+			console.error("Error making prediction:", error);
+			alert("An error occurred while processing your request.");
+		}
+	};
 
   return (
     <>

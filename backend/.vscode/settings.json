@@ -16,7 +16,19 @@
 		"titleBar.activeBackground": "#0a3c14",
 		"titleBar.activeForeground": "#e7e7e7",
 		"titleBar.inactiveBackground": "#0a3c1499",
-		"titleBar.inactiveForeground": "#e7e7e799"
+		"titleBar.inactiveForeground": "#e7e7e799",
+		"editorError.foreground": "#000000ff",
+		"editorGroup.border": "#116823",
+		"editorInfo.foreground": "#000000ff",
+		"editorWarning.foreground": "#000000ff",
+		"panel.border": "#116823",
+		"sideBar.border": "#116823",
+		"statusBar.border": "#0a3c14",
+		"statusBar.debuggingBackground": "#3c0a32",
+		"statusBar.debuggingBorder": "#3c0a32",
+		"statusBar.debuggingForeground": "#e7e7e7",
+		"tab.activeBorder": "#116823",
+		"titleBar.border": "#0a3c14"
 	},
 	"peacock.color": "#0A3C14"
 }
