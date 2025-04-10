@@ -9,8 +9,14 @@ function Hero() {
 	const [displayText, setDisplayText] = useState("Loading recommendations...");
 
 	const handleSubmit = async () => {
-		if (!patientType || !gender || !age) {
-			console.warn("Missing fields; using default values for demo.");
+		if (!patientType || !gender || !age || !specimenType) {
+			alert("Please fill in all the fields before submitting.");
+			return;
+		}
+
+		if (age <= 0 || age > 100) {
+			alert("Age must be between 1 and 100.");
+			return;
 		}
 
 		try {
@@ -18,7 +24,7 @@ function Hero() {
 				type: patientType,
 				specimenType: specimenType,
 				gender: gender,
-				age: age,
+				age: parseInt(age, 10),
 			});
 
 			setDisplayText(
@@ -29,36 +35,27 @@ function Hero() {
 					<table className="min-w-full md:mb-0 mb- bg-transparent border border-orange-500 rounded-lg">
 						<thead className="bg-white bg-opacity-10 text-white">
 							<tr>
-								<th className="py-2 px-4 border-b border-orange-500">
-									Antibiotic
-								</th>
-								<th className="py-2 px-4 border-b border-orange-500">Status</th>
-								<th className="py-2 px-4 border-b border-orange-500">
-									Resistance (%)
-								</th>
-								<th className="py-2 px-4 border-b border-orange-500">
-									Sensitive (%)
-								</th>
+								<th className="py-2 px-4 border-b">Antibiotic</th>
+								<th className="py-2 px-4 border-b">Status</th>
+								<th className="py-2 px-4 border-b">Resistance (%)</th>
+								<th className="py-2 px-4 border-b">Sensitive (%)</th>
+								<th className="py-2 px-4 border-b">Antibiotic not used (%)</th>
+								<th className="py-2 px-4 border-b">Resistant Count</th>
+								<th className="py-2 px-4 border-b">Sensitive Count</th>
+								<th className="py-2 px-4 border-b">Antibiotic not tested Count</th>
 							</tr>
 						</thead>
 						<tbody>
-							{response.data.predictions.slice(0, 5).map((item, index) => (
-								<tr
-									key={index}
-									className="hover:bg-white hover:bg-opacity-20 text-white"
-								>
-									<td className="py-2 px-4 border-b border-orange-500">
-										{item.antibiotic}
-									</td>
-									<td className="py-2 px-4 border-b border-orange-500">
-										{item.resistance_status}
-									</td>
-									<td className="py-2 px-4 border-b border-orange-500">
-										{item.resistance}
-									</td>
-									<td className="py-2 px-4 border-b border-orange-500">
-										{item.sensitive}
-									</td>
+							{response.data.predictions.map((item, index) => (
+								<tr key={index} className="hover:bg-gray-700">
+									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
+									<td className="py-2 px-4 border-b font-semibold">{item.resistance_status}</td>
+									<td className="py-2 px-4 border-b">{item.resistance}%</td>
+									<td className="py-2 px-4 border-b">{item.sensitive}%</td>
+									<td className="py-2 px-4 border-b">{item.notused}%</td>
+									<td className="py-2 px-4 border-b">{item.total_resistant_patients}</td>
+									<td className="py-2 px-4 border-b">{item.total_sensitive_patients}</td>
+									<td className="py-2 px-4 border-b">{item.total_notused_patients}</td>
 								</tr>
 							))}
 						</tbody>

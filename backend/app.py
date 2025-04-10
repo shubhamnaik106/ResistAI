@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.multioutput import MultiOutputClassifier
@@ -53,8 +54,8 @@ def train_LR():
     data = pd.read_excel('Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
-    
-    features = ['Sex', 'Age', 'Specimen_Type']
+    data['Culture'] = data['Culture'].astype(str)
+    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
     targets = data.columns[4:]
     X = data[features]
     y = data[targets]
@@ -62,7 +63,7 @@ def train_LR():
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), ['Age']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type'])
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
         ]
     )
     
@@ -108,13 +109,15 @@ def predict():
     new_patient = pd.DataFrame({
         'Sex': [new_gen],
         'Age': [data['age']],
-        'Specimen_Type': [data['specimenType'].strip().upper()]
+        'Specimen_Type': [data['specimenType'].strip().upper()],
+        'Culture' : ['Escherichia coli']
     })
     
     
     # Convert data types
     new_patient['Age'] = pd.to_numeric(new_patient['Age'], errors='coerce')
     new_patient['Sex'] = new_patient['Sex'].astype(str)
+    new_patient['Culture'] = new_patient['Culture'].astype(str)
     #print("New Patient Data Types:\n", new_patient.dtypes)
     
     # Check for NaN values
@@ -141,6 +144,7 @@ def predict():
     
     # Convert dataset columns to standard types
     dataset['Sex'] = dataset['Sex'].astype(str)
+    dataset['Culture'] = dataset['Culture'].astype(str)
     dataset['Specimen_Type'] = dataset['Specimen_Type'].str.strip().str.upper()
     dataset['Age'] = pd.to_numeric(dataset['Age'], errors='coerce')
     
@@ -158,31 +162,56 @@ def predict():
     filtered_dataset = dataset[
         (dataset['Sex'] == new_patient['Sex'].values[0]) &
         (dataset['Age'] == new_patient['Age'].values[0]) &
-        (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])
+        (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])&
+        (dataset['Culture'] == 'Escherichia coli')
     ]
     
     if filtered_dataset.empty: #or filtered_dataset.shape[0] <30
         print("No matching data found for the given input! or insuffitient data for predictions")
         return jsonify({"error": "No matching data found for given input. or insuffitient data for predictions"})
     
+    culture_antibiotics = pd.read_excel("Culture_Antibiotics.xlsx", sheet_name=0)
+    print("Excel File Loaded Successfully.")
+    print("Available Sheets:", culture_antibiotics.keys())
+    # Get antibiotics for "Escherichia coli"
+    if "Escherichia coli" in culture_antibiotics.columns:
+        ecoli_antibiotics = culture_antibiotics["Escherichia coli"].dropna().tolist()
+    else:
+        return jsonify({"error": "Escherichia coli antibiotics not found in culture_antibiotics.xlsx"})
     
     resistance_status = []
     for col in target_columns:
-        total_resistant = (filtered_dataset[col] == -1).sum()
-        total_sensitive = (filtered_dataset[col] == 1).sum()
-        total_valid = total_resistant + total_sensitive
+        if col not in ecoli_antibiotics:  # **Filter only relevant antibiotics**
+            print(f"Skipping {col} (Not in culture_antibiotics.xlsx)")
+            continue
+        total_resistant = int((filtered_dataset[col] == -1).sum())
+        total_sensitive = int((filtered_dataset[col] == 1).sum())
+        total_notused = int((filtered_dataset[col] == 0).sum())
+        total_valid = total_resistant + total_sensitive +  total_notused
         
-        resistance_R = ((total_resistant / total_valid) * 100) if total_valid > 0 else 0
-        sensitive_S = ((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
+        resistance_R = int((total_resistant / total_valid) * 100) if total_valid > 0 else 0
+        sensitive_S = int((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
+        notused_N = int((total_notused / total_valid) * 100) if total_valid > 0 else 0
         
-        status = "Resistant" if prediction[col] == 1 else "Sensitive"
+         # Correct resistance status logic
+        if prediction[col] == 1:
+            status = "Sensitive"
+        elif prediction[col] == 0:
+            status = "Not Used"
+        else:
+            status = "Resistant"
+
         resistance_status.append({
             "antibiotic": col,
             "resistance_status": status,
             "resistance": round(resistance_R, 2),
-            "sensitive": round(sensitive_S, 2)
+            "sensitive": round(sensitive_S, 2),
+            "notused": round(notused_N, 2),
+            "total_resistant_patients": total_resistant,  
+            "total_sensitive_patients": total_sensitive,  
+            "total_notused_patients": total_notused
         })
-    
+        print("Final Resistance Status:", resistance_status)
     return jsonify({"predictions": resistance_status})
 
 
