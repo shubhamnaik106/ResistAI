@@ -19,7 +19,7 @@ def train_XGB():
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     
     features = ['Sex', 'Age', 'Specimen_Type']
-    targets = data.columns[4:]
+    targets = data.columns[4:]  
 
     X = data[features]
     y = data[targets].replace({-1: 0, 0: 0, 1: 1})
