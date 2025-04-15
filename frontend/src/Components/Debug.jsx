@@ -6,10 +6,11 @@ function Debug() {
 	const [patientType, setPatientType] = useState("");
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
+	const [modal, setModal] = useState("");
 	const [displayText, setDisplayText] = useState("Debugging !!!!!!!!!!");
 
 	const handleSubmit = async () => {
-		if (!patientType || !gender || !age || !specimenType) {
+		if (!patientType || !gender || !age || !specimenType || !modal) {
 			alert("Please fill in all the fields before submitting.");
 			return;
 		}
@@ -25,6 +26,7 @@ function Debug() {
 				specimenType: specimenType,
 				gender: gender,
 				age: parseInt(age, 10),
+				modal: modal,
 			});
 
 			setDisplayText(
@@ -32,7 +34,7 @@ function Debug() {
 					<h2 className="text-2xl font-bold mb-4 text-white">
 						Prediction Results (Debug)
 					</h2>
-					<table className="min-w-full md:mb-0 mb- bg-transparent border border-orange-500 rounded-lg">
+					<table className="min-w-full md:mb-0 bg-transparent border border-orange-500 rounded-lg">
 						<thead className="bg-white bg-opacity-10 text-white">
 							<tr>
 								<th className="py-2 px-4 border-b">Antibiotic</th>
@@ -42,30 +44,20 @@ function Debug() {
 								<th className="py-2 px-4 border-b">Antibiotic not used (%)</th>
 								<th className="py-2 px-4 border-b">Resistant Count</th>
 								<th className="py-2 px-4 border-b">Sensitive Count</th>
-								<th className="py-2 px-4 border-b">
-									Antibiotic not tested Count
-								</th>
+								<th className="py-2 px-4 border-b">Antibiotic not tested Count</th>
 							</tr>
 						</thead>
 						<tbody>
 							{response.data.predictions.map((item, index) => (
 								<tr key={index} className="hover:bg-gray-700">
 									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
-									<td className="py-2 px-4 border-b font-semibold">
-										{item.resistance_status}
-									</td>
+									<td className="py-2 px-4 border-b font-semibold">{item.resistance_status}</td>
 									<td className="py-2 px-4 border-b">{item.resistance}%</td>
 									<td className="py-2 px-4 border-b">{item.sensitive}%</td>
 									<td className="py-2 px-4 border-b">{item.notused}%</td>
-									<td className="py-2 px-4 border-b">
-										{item.total_resistant_patients}
-									</td>
-									<td className="py-2 px-4 border-b">
-										{item.total_sensitive_patients}
-									</td>
-									<td className="py-2 px-4 border-b">
-										{item.total_notused_patients}
-									</td>
+									<td className="py-2 px-4 border-b">{item.total_resistant_patients}</td>
+									<td className="py-2 px-4 border-b">{item.total_sensitive_patients}</td>
+									<td className="py-2 px-4 border-b">{item.total_notused_patients}</td>
 								</tr>
 							))}
 						</tbody>
@@ -94,12 +86,8 @@ function Debug() {
 							onChange={(e) => setPatientType(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>
-								Select Type
-							</option>
-							<option value="IPD" disabled>
-								IPD
-							</option>
+							<option value="" disabled>Select Type</option>
+							<option value="IPD" disabled>IPD</option>
 							<option value="OPD">OPD</option>
 						</select>
 
@@ -109,22 +97,12 @@ function Debug() {
 							onChange={(e) => setSpecimenType(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>
-								Select Specimen
-							</option>
+							<option value="" disabled>Select Specimen</option>
 							<option value="Urine">Urine</option>
-							<option value="Stool" disabled>
-								Stool
-							</option>
-							<option value="Blood" disabled>
-								Blood
-							</option>
-							<option value="Swab" disabled>
-								Swab
-							</option>
-							<option value="Pus" disabled>
-								Pus
-							</option>
+							<option value="Stool" disabled>Stool</option>
+							<option value="Blood" disabled>Blood</option>
+							<option value="Swab" disabled>Swab</option>
+							<option value="Pus" disabled>Pus</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
@@ -133,9 +111,7 @@ function Debug() {
 							onChange={(e) => setGender(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>
-								Select Gender
-							</option>
+							<option value="" disabled>Select Gender</option>
 							<option value="Male">Male</option>
 							<option value="Female">Female</option>
 						</select>
@@ -150,6 +126,20 @@ function Debug() {
 							min="1"
 							max="100"
 						/>
+
+						<p className="text-white text-xl mt-4">Select Model</p>
+						<select
+							value={modal}
+							onChange={(e) => setModal(e.target.value)}
+							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
+						>
+							<option value="" disabled>Select Model</option>
+							<option value="lr">LR</option>
+							<option value="knn">KNN</option>
+							<option value="xgb">XG BOOST</option>
+							<option value="svn">SVN</option>
+							<option value="rf">RANDOM FOREST</option>
+						</select>
 
 						<button
 							onClick={handleSubmit}
