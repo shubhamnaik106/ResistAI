@@ -135,8 +135,8 @@ def predict():
     # Perform prediction
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
-    #print("Target Columns:", target_columns)
-    #print("Prediction Dictionary:", prediction)
+    print("Target Columns:", target_columns)
+    print("Prediction Dictionary:", prediction)
     
     # Load dataset
     dataset = pd.read_excel('Urine Dataset.xlsx')
@@ -166,9 +166,7 @@ def predict():
         (dataset['Culture'] == 'Escherichia coli')
     ]
     
-    if filtered_dataset.empty: #or filtered_dataset.shape[0] <30
-        print("No matching data found for the given input! or insuffitient data for predictions")
-        return jsonify({"error": "No matching data found for given input. or insuffitient data for predictions"})
+    
     
     culture_antibiotics = pd.read_excel("Culture_Antibiotics.xlsx", sheet_name=0)
     print("Excel File Loaded Successfully.")

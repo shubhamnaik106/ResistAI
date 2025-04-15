@@ -4,6 +4,7 @@ import Hero from "./Components/Hero";
 import Trends from "./Components/Trends";
 import About from "./Components/About";
 import { useState } from "react";
+import Debug from "./Components/Debug";
 
 function App() {
 	const [activeSection, setActiveSection] = useState("home");
@@ -18,6 +19,7 @@ function App() {
 			{activeSection === "home" && <Hero />}
 			{activeSection === "trends" && <Trends />}
 			{activeSection === "about" && <About />}
+			{activeSection === "debug" && <Debug />}
 		</div>
 	);
 }

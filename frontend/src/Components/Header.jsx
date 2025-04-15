@@ -29,6 +29,11 @@ function Header({ setActiveSection }) {
 			title: "ABOUT",
 			action: () => setActiveSection("about"),
 		},
+		{
+			id: 4,
+			title: "DEBUG",
+			action: () => setActiveSection("debug"),
+		},
 	];
 
 	const handleClose = () => {

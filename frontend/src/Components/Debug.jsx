@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-function Hero() {
+function Debug() {
 	const [specimenType, setSpecimenType] = useState("");
 	const [patientType, setPatientType] = useState("");
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
-	const [displayText, setDisplayText] = useState("Loading recommendations...");
+	const [displayText, setDisplayText] = useState("Debugging !!!!!!!!!!");
 
 	const handleSubmit = async () => {
 		if (!patientType || !gender || !age || !specimenType) {
@@ -30,7 +30,7 @@ function Hero() {
 			setDisplayText(
 				<div className="overflow-auto max-h-96">
 					<h2 className="text-2xl font-bold mb-4 text-white">
-						Prediction Results
+						Prediction Results (Debug)
 					</h2>
 					<table className="min-w-full md:mb-0 mb- bg-transparent border border-orange-500 rounded-lg">
 						<thead className="bg-white bg-opacity-10 text-white">
@@ -169,4 +169,4 @@ function Hero() {
 	);
 }
 
-export default Hero;
+export default Debug;

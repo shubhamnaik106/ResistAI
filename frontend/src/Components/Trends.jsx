@@ -142,7 +142,9 @@ function Trends() {
 						<option value="" disabled>
 							Select Type
 						</option>
-						<option value="IPD">IPD</option>
+						<option value="IPD" disabled>
+							IPD
+						</option>
 						<option value="OPD">OPD</option>
 					</select>
 
