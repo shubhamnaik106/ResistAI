@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.compose import ColumnTransformer
@@ -89,9 +92,132 @@ def train_LR():
     ]
     
     return pipeline, y_train.columns, metrics
+def train_KNN():
+    data = pd.read_excel('Urine Dataset.xlsx')
+    data['Sex'] = data['Sex'].astype(str)
+    data['Specimen_Type'] = data['Specimen_Type'].astype(str)
+    data['Culture'] = data['Culture'].astype(str)
+    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[4:]
+    X = data[features]
+    y = data[targets]
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), ['Age']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+        ]
+    )
+    
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('classifier', MultiOutputClassifier(KNeighborsClassifier(n_neighbors=5)))
+    ])
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+    single_class_targets = [col for col in y_train.columns if len(y_train[col].unique()) == 1]
+    if single_class_targets:
+        y_train = y_train.drop(columns=single_class_targets)
+        y_test = y_test.drop(columns=single_class_targets)
+    
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    
+    metrics = [
+{"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
+}
+        for i, col in enumerate(y_train.columns)
+    ]
+    
+    return pipeline, y_train.columns, metrics
+
+def train_RD():
+    data = pd.read_excel('Urine Dataset.xlsx')
+    data['Sex'] = data['Sex'].astype(str)
+    data['Specimen_Type'] = data['Specimen_Type'].astype(str)
+    data['Culture'] = data['Culture'].astype(str)
+    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[4:]
+    X = data[features]
+    y = data[targets]
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), ['Age']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+        ]
+    )
+    
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('classifier', MultiOutputClassifier(RandomForestClassifier(n_estimators=100, random_state=42)))
+    ])
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+    single_class_targets = [col for col in y_train.columns if len(y_train[col].unique()) == 1]
+    if single_class_targets:
+        y_train = y_train.drop(columns=single_class_targets)
+        y_test = y_test.drop(columns=single_class_targets)
+    
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    
+    metrics = [
+{"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
+}
+        for i, col in enumerate(y_train.columns)
+    ]
+    
+    return pipeline, y_train.columns, metrics
+
+def train_SVM():
+    data = pd.read_excel('Urine Dataset.xlsx')
+    data['Sex'] = data['Sex'].astype(str)
+    data['Specimen_Type'] = data['Specimen_Type'].astype(str)
+    data['Culture'] = data['Culture'].astype(str)
+    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[4:]
+    X = data[features]
+    y = data[targets]
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), ['Age']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+        ]
+    )
+    
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('classifier', MultiOutputClassifier(SVC(kernel='linear', probability=True)))
+    ])
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+    single_class_targets = [col for col in y_train.columns if len(y_train[col].unique()) == 1]
+    if single_class_targets:
+        y_train = y_train.drop(columns=single_class_targets)
+        y_test = y_test.drop(columns=single_class_targets)
+    
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    
+    metrics = [
+        {"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
+}
+        for i, col in enumerate(y_train.columns)
+    ]
+    
+    return pipeline, y_train.columns, metrics
+
 
 xgb_pipeline, xgb_columns, xgb_metrics = train_XGB()
 lr_pipeline, lr_target_colume, lr_metrics = train_LR()
+svm_pipeline, svm_target_colume, svm_metrics = train_SVM()
+knn_pipeline, knn_target_colume, knn_metrics = train_KNN()
+rf_pipeline, rf_target_colume, rf_metrics = train_RD()
 
 
 @app.route("/", methods=["POST"])
@@ -99,7 +225,7 @@ def predict():
     data = request.get_json()
     print("Received JSON Data:", data)
     
-    model_type = 'lr'  # Model selection
+    model_type = 'knn'  # Model selection
     
     # Map gender to match dataset values
     sex_mapping = {'Male': '1', 'Female': '0'}
@@ -129,9 +255,14 @@ def predict():
     # Select the model pipeline
     if model_type == 'lr':
         pipeline, target_columns, metrics = lr_pipeline, lr_target_colume, lr_metrics
-    else:
+    elif model_type == 'xgb':
         pipeline, target_columns, metrics = xgb_pipeline, xgb_columns, xgb_metrics
-    
+    elif model_type == 'knn':
+        pipeline, target_columns, metrics = knn_pipeline, knn_target_colume, knn_metrics
+    elif model_type == 'rf':
+        pipeline, target_columns, metrics = rf_pipeline, rf_target_colume, rf_metrics
+    else:
+        pipeline, target_columns, metrics = svm_pipeline, svm_target_colume, svm_metrics
     # Perform prediction
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
