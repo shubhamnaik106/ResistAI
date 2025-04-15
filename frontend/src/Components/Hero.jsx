@@ -6,10 +6,11 @@ function Hero() {
 	const [patientType, setPatientType] = useState("");
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
+	const [model, setmodel] = useState("");
 	const [displayText, setDisplayText] = useState("Loading recommendations...");
 
 	const handleSubmit = async () => {
-		if (!patientType || !gender || !age || !specimenType) {
+		if (!patientType || !gender || !age || !specimenType || !model) {
 			alert("Please fill in all the fields before submitting.");
 			return;
 		}
@@ -24,6 +25,7 @@ function Hero() {
 				type: patientType,
 				specimenType: specimenType,
 				gender: gender,
+				model: model,
 				age: parseInt(age, 10),
 			});
 
@@ -150,13 +152,26 @@ function Hero() {
 							min="1"
 							max="100"
 						/>
-
+						<p className="text-white text-xl mt-4">Enter Model</p>
+						<select
+							value={model}
+							onChange={(e) => setmodel(e.target.value)}
+							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
+						>
+							<option value="knn">KNN</option>
+							<option value="svm">SVM</option>
+							<option value="rf">Random Forest</option>
+							<option value="lr">LR</option>
+							<option value="xgb">XGboost</option>
+						</select>
+						
 						<button
 							onClick={handleSubmit}
 							className="text-white bg-orange-500 mt-8 border-[2px] border-transparent rounded-full text-[15px] px-6 py-1 cursor-pointer"
 						>
 							Get Recommendations
 						</button>
+						
 					</div>
 				</div>
 

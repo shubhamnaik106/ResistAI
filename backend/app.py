@@ -225,7 +225,7 @@ def predict():
     data = request.get_json()
     print("Received JSON Data:", data)
     
-    model_type = 'knn'  # Model selection
+    model_type = data["model"] # Model selection
     
     # Map gender to match dataset values
     sex_mapping = {'Male': '1', 'Female': '0'}
