@@ -21,7 +21,7 @@ function Hero() {
 		}
 
 		try {
-			const response = await axios.post("http://localhost:5005/", {
+			const response = await axios.post("http://localhost:5005/predict_hero", {
 				type: patientType,
 				specimenType: specimenType,
 				gender: gender,

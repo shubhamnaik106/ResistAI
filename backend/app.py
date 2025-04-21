@@ -15,7 +15,10 @@ from sklearn.linear_model import LogisticRegression
 from flask_cors import CORS
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "http://localhost:5000"}})
+CORS(app, resources={r"/predict_trends": {"origins": "http://localhost:5000"},
+    r"/predict_hero": {"origins": "http://localhost:5000"},
+    r"/get_antibiotics": {"origins": "http://localhost:5000"}
+    })
 def train_XGB():
     data = pd.read_excel('Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
@@ -233,8 +236,8 @@ knn_pipeline, knn_target_colume, knn_metrics = train_KNN()
 rf_pipeline, rf_target_colume, rf_metrics = train_RD()
 
 
-@app.route("/", methods=["POST"])
-def predict():
+@app.route("/predict_hero", methods=["POST"])
+def predict_hero():
     data = request.get_json()
     print("Received JSON Data:", data)
     
@@ -329,29 +332,7 @@ def predict():
         if col not in ecoli_antibiotics:  # **Filter only relevant antibiotics**
             print(f"Skipping {col} (Not in culture_antibiotics.xlsx)")
             continue
-        yearly_stats = []
-        year_filter = filtered_dataset['Year'].unique()
-
-        for year in year_filter:
-            year_data = filtered_dataset[filtered_dataset['Year'] == year]
-            y_total_resistant = int((year_data[col] == -1).sum())
-            y_total_sensitive = int((year_data[col] == 1).sum())
-            y_total_notused = int((year_data[col] == 0).sum())
-            y_total_valid = y_total_resistant + y_total_sensitive + y_total_notused
-
-            y_resistance_R = round((y_total_resistant / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
-            y_sensitive_S = round((y_total_sensitive / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
-            y_notused_N = round((y_total_notused / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
-
-            yearly_stats.append({
-                "year": int(year),
-                "sensitive": y_sensitive_S,
-                "resistant": y_resistance_R,
-                "notused": y_notused_N,
-                "total_sensitive": y_total_sensitive,
-                "total_resistant": y_total_resistant,
-                "total_notused": y_total_notused
-            })
+        
 
 
         total_resistant = int((filtered_dataset[col] == -1).sum())
@@ -379,13 +360,105 @@ def predict():
             "notused": round(notused_N, 2),
             "total_resistant_patients": total_resistant,  
             "total_sensitive_patients": total_sensitive,  
-            "total_notused_patients": total_notused,
-            "yearly_stats": yearly_stats
+            "total_notused_patients": total_notused
         })
         print("Final Resistance Status:", resistance_status)
     return jsonify({"predictions": resistance_status})
 
 
+
+
+
+
+@app.route("/predict_trends", methods=["POST"])
+
+
+@app.route('/predict_trends', methods=['POST'])
+def predict_trends():
+    data = request.get_json()
+    print("Received Trends Request:", data)
+
+    age = data.get('age', None)  # Could be None
+    gender = data.get('gender', None)  # Could be None
+    specimen_type = data.get('specimenType', '').strip().upper()
+    antibiotic_of_interest = data.get('antibiotic', '').strip()
+
+    # Load datasets
+    dataset = pd.read_excel('Urine Dataset.xlsx')
+    culture_antibiotics = pd.read_excel('Culture_Antibiotics.xlsx', sheet_name=0)
+
+    # Clean dataset
+    dataset['Sex'] = dataset['Sex'].astype(str)
+    dataset['Culture'] = dataset['Culture'].astype(str)
+    dataset['Specimen_Type'] = dataset['Specimen_Type'].str.strip().str.upper()
+    dataset['Age'] = pd.to_numeric(dataset['Age'], errors='coerce')
+    dataset['Year'] = pd.to_numeric(dataset['Year'], errors='coerce')
+
+    # Filter for E. coli
+    filtered_dataset = dataset[dataset['Culture'] == 'Escherichia coli']
+
+    # Apply gender filter only if provided
+    if gender:
+        sex_mapping = {'Male': '1', 'Female': '0'}
+        sex = sex_mapping.get(gender, None)
+        if sex is not None:
+            filtered_dataset = filtered_dataset[filtered_dataset['Sex'] == sex]
+
+    # Apply age filter only if provided
+    if age is not None:
+        filtered_dataset = filtered_dataset[filtered_dataset['Age'] == age]
+
+    # Apply specimen type filter only if provided
+    if specimen_type:
+        filtered_dataset = filtered_dataset[filtered_dataset['Specimen_Type'] == specimen_type]
+
+    # Validate antibiotic
+    if antibiotic_of_interest not in filtered_dataset.columns:
+        return jsonify({"error": f"{antibiotic_of_interest} not found in dataset."}), 400
+
+    col = antibiotic_of_interest
+    yearly_stats = []
+    year_filter = filtered_dataset['Year'].dropna().unique()
+
+    for year in sorted(year_filter):
+        year_data = filtered_dataset[filtered_dataset['Year'] == year]
+        y_total_resistant = int((year_data[col] == -1).sum())
+        y_total_sensitive = int((year_data[col] == 1).sum())
+        y_total_notused = int((year_data[col] == 0).sum())
+        y_total_valid = y_total_resistant + y_total_sensitive + y_total_notused
+
+        y_resistance_R = round((y_total_resistant / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
+        y_sensitive_S = round((y_total_sensitive / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
+        y_notused_N = round((y_total_notused / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
+
+        yearly_stats.append({
+            "year": int(year),
+            "sensitive": y_sensitive_S,
+            "resistant": y_resistance_R,
+            "notused": y_notused_N,
+            "total_sensitive": y_total_sensitive,
+            "total_resistant": y_total_resistant,
+            "total_notused": y_total_notused
+        })
+
+    result = {
+        "predictions": [{
+            "antibiotic": antibiotic_of_interest,
+            "yearly_stats": yearly_stats
+        }]
+    }
+    return jsonify(result)
+
+
+
+@app.route('/get_antibiotics', methods=['GET'])
+def get_antibiotics():
+    # Load the antibiotics dataset from Culture_Antibiotics.xlsx file
+    culture_antibiotics = pd.read_excel('Culture_Antibiotics.xlsx', sheet_name=0)
+    antibiotics_list = culture_antibiotics['Escherichia coli'].tolist()
+    print(antibiotics_list)
+
+    return jsonify(antibiotics_list)
 
 
 if __name__ == "__main__":

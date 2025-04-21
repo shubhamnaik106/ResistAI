@@ -25,4 +25,8 @@ filtered_dataset = dataset[
     (dataset['Specimen_Type'] == 'Urine'.upper())&
     (dataset['Culture'] == 'Escherichia coli')
 ]
-print(filtered_dataset)
+culture_antibiotics = pd.read_excel('Culture_Antibiotics.xlsx', sheet_name=0)
+    
+    # Assume the antibiotics are listed as columns in the dataset
+antibiotics_list = culture_antibiotics['Escherichia coli'].tolist()
+print(antibiotics_list)
