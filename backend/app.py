@@ -21,17 +21,17 @@ def train_XGB():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     
-    features = ['Sex', 'Age', 'Specimen_Type']
-    targets = data.columns[4:]  
+    features = ['Year','Sex', 'Age', 'Specimen_Type']
+    targets = data.columns[5:]  
 
     X = data[features]
     y = data[targets].replace({-1: 0, 0: 0, 1: 1})
-    valid_targets = [col for col in y.columns if set(y[col].unique()).issuperset({0, 1})]
+    valid_targets = [col for col in y.columns if set(y[col].unique()).issubset({0, 1}) and len(set(y[col].unique())) > 1]
     y = y[valid_targets]
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age']),
+            ('num', StandardScaler(), ['Age','Year']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type'])
         ]
     )
@@ -58,14 +58,17 @@ def train_LR():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
-    targets = data.columns[4:]
+    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[5:]
     X = data[features]
-    y = data[targets]
-    
+    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+
+    # Drop non-numeric or invalid columns
+    y = y.apply(pd.to_numeric, errors='coerce')
+    y = y.dropna(axis=1)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age']),
+            ('num', StandardScaler(), ['Age','Year']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
         ]
     )
@@ -97,14 +100,17 @@ def train_KNN():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
-    targets = data.columns[4:]
+    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[5:]
     X = data[features]
-    y = data[targets]
-    
+    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+
+    # Drop non-numeric or invalid columns
+    y = y.apply(pd.to_numeric, errors='coerce')
+    y = y.dropna(axis=1)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age']),
+            ('num', StandardScaler(), ['Age','Year']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
         ]
     )
@@ -137,14 +143,17 @@ def train_RD():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
-    targets = data.columns[4:]
+    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[5:]
     X = data[features]
-    y = data[targets]
-    
+    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+
+    # Drop non-numeric or invalid columns
+    y = y.apply(pd.to_numeric, errors='coerce')
+    y = y.dropna(axis=1)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age']),
+            ('num', StandardScaler(), ['Age','Year']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
         ]
     )
@@ -177,14 +186,18 @@ def train_SVM():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Sex', 'Age', 'Specimen_Type', 'Culture']
-    targets = data.columns[4:]
+    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    targets = data.columns[5:]
     X = data[features]
-    y = data[targets]
+    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+
+    # Drop non-numeric or invalid columns
+    y = y.apply(pd.to_numeric, errors='coerce')
+    y = y.dropna(axis=1)
     
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age']),
+            ('num', StandardScaler(), ['Age','Year']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
         ]
     )
@@ -231,17 +244,19 @@ def predict():
     sex_mapping = {'Male': '1', 'Female': '0'}
     new_gen = sex_mapping.get(data['gender'], 'Unknown')
     
-    
+    years = ['2023', '2022', '2024']
     new_patient = pd.DataFrame({
-        'Sex': [new_gen],
-        'Age': [data['age']],
-        'Specimen_Type': [data['specimenType'].strip().upper()],
-        'Culture' : ['Escherichia coli']
+        'Sex': [new_gen]* len(years),
+        'Age': [data['age']]* len(years),
+        'Specimen_Type': [data['specimenType'].strip().upper()]* len(years),
+        'Culture' : ['Escherichia coli']* len(years),
+        'Year': years
     })
     
     
     # Convert data types
     new_patient['Age'] = pd.to_numeric(new_patient['Age'], errors='coerce')
+    new_patient['Year'] = pd.to_numeric(new_patient['Year'], errors='coerce')
     new_patient['Sex'] = new_patient['Sex'].astype(str)
     new_patient['Culture'] = new_patient['Culture'].astype(str)
     #print("New Patient Data Types:\n", new_patient.dtypes)
@@ -278,6 +293,7 @@ def predict():
     dataset['Culture'] = dataset['Culture'].astype(str)
     dataset['Specimen_Type'] = dataset['Specimen_Type'].str.strip().str.upper()
     dataset['Age'] = pd.to_numeric(dataset['Age'], errors='coerce')
+    dataset['Year'] = pd.to_numeric(dataset['Year'], errors='coerce')
     
     #print("Dataset Head (after standardization):\n", dataset.head())
     #print("Dataset Data Types:\n", dataset.dtypes)
@@ -313,6 +329,31 @@ def predict():
         if col not in ecoli_antibiotics:  # **Filter only relevant antibiotics**
             print(f"Skipping {col} (Not in culture_antibiotics.xlsx)")
             continue
+        yearly_stats = []
+        year_filter = filtered_dataset['Year'].unique()
+
+        for year in year_filter:
+            year_data = filtered_dataset[filtered_dataset['Year'] == year]
+            y_total_resistant = int((year_data[col] == -1).sum())
+            y_total_sensitive = int((year_data[col] == 1).sum())
+            y_total_notused = int((year_data[col] == 0).sum())
+            y_total_valid = y_total_resistant + y_total_sensitive + y_total_notused
+
+            y_resistance_R = round((y_total_resistant / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
+            y_sensitive_S = round((y_total_sensitive / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
+            y_notused_N = round((y_total_notused / y_total_valid) * 100, 2) if y_total_valid > 0 else 0
+
+            yearly_stats.append({
+                "year": int(year),
+                "sensitive": y_sensitive_S,
+                "resistant": y_resistance_R,
+                "notused": y_notused_N,
+                "total_sensitive": y_total_sensitive,
+                "total_resistant": y_total_resistant,
+                "total_notused": y_total_notused
+            })
+
+
         total_resistant = int((filtered_dataset[col] == -1).sum())
         total_sensitive = int((filtered_dataset[col] == 1).sum())
         total_notused = int((filtered_dataset[col] == 0).sum())
@@ -338,7 +379,8 @@ def predict():
             "notused": round(notused_N, 2),
             "total_resistant_patients": total_resistant,  
             "total_sensitive_patients": total_sensitive,  
-            "total_notused_patients": total_notused
+            "total_notused_patients": total_notused,
+            "yearly_stats": yearly_stats
         })
         print("Final Resistance Status:", resistance_status)
     return jsonify({"predictions": resistance_status})

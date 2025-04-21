@@ -119,6 +119,16 @@ function Trends() {
 				const formatted = response.data.predictions.map((item) => ({
 					antibiotic: item.antibiotic,
 					resistance: item.resistance,
+					yearly_stats: item.yearly_stats.map((stat) => ({
+						year: stat.year,
+						sensitive: stat.sensitive,
+						resistant: stat.resistant,
+						notused: stat.notused,
+						total_sensitive: stat.total_sensitive,
+						total_resistant: stat.total_resistant,
+						total_notused: stat.total_notused,
+					})),
+
 				}));
 				setChartData(formatted);
 			}
