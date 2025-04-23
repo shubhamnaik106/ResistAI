@@ -61,42 +61,49 @@ def train_LR():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+
+    # Bin Age into categories
+    bins = list(range(0, 110, 10))  # [0, 10, 20, ..., 100]
+    labels = [f"{i}-{i+10}" for i in range(0, 100, 10)]
+    data['Age_Bin'] = pd.cut(data['Age'], bins=bins, labels=labels, right=False)
+
+    features = ['Year', 'Sex', 'Specimen_Type', 'Culture', 'Age_Bin']
     targets = data.columns[5:]
+
     X = data[features]
     y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+    y = y.apply(pd.to_numeric, errors='coerce').dropna(axis=1)
 
-    # Drop non-numeric or invalid columns
-    y = y.apply(pd.to_numeric, errors='coerce')
-    y = y.dropna(axis=1)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age','Year']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type', 'Culture', 'Age_Bin'])
         ]
     )
-    
+
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
         ('classifier', MultiOutputClassifier(LogisticRegression(max_iter=1000, random_state=42)))
     ])
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    
+
     single_class_targets = [col for col in y_train.columns if len(y_train[col].unique()) == 1]
-    if single_class_targets:
-        y_train = y_train.drop(columns=single_class_targets)
-        y_test = y_test.drop(columns=single_class_targets)
-    
+    y_train = y_train.drop(columns=single_class_targets, errors='ignore')
+    y_test = y_test.drop(columns=single_class_targets, errors='ignore')
+
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
-    
+
     metrics = [
-        {"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
-}
+        {
+            "antibiotic": col,
+            "accuracy": accuracy_score(y_test[col], y_pred[:, i]),
+            "sensitivity": recall_score(y_test[col], y_pred[:, i], average="macro")
+        }
         for i, col in enumerate(y_train.columns)
     ]
-    
+
     return pipeline, y_train.columns, metrics
 def train_KNN():
     data = pd.read_excel('Urine Dataset.xlsx')
@@ -241,7 +248,7 @@ def predict_hero():
     data = request.get_json()
     print("Received JSON Data:", data)
     
-    model_type = data["model"] # Model selection
+    model_type = data["model"]  # Model selection
     
     # Map gender to match dataset values
     sex_mapping = {'Male': '1', 'Female': '0'}
@@ -249,28 +256,34 @@ def predict_hero():
     
     years = ['2023', '2022', '2024']
     new_patient = pd.DataFrame({
-        'Sex': [new_gen]* len(years),
-        'Age': [data['age']]* len(years),
-        'Specimen_Type': [data['specimenType'].strip().upper()]* len(years),
-        'Culture' : ['Escherichia coli']* len(years),
+        'Sex': [new_gen] * len(years),
+        'Age': [data['age']] * len(years),
+        'Specimen_Type': [data['specimenType'].strip().upper()] * len(years),
+        'Culture': ['Escherichia coli'] * len(years),
         'Year': years
     })
     
-    
-    # Convert data types
+    # Convert types
     new_patient['Age'] = pd.to_numeric(new_patient['Age'], errors='coerce')
     new_patient['Year'] = pd.to_numeric(new_patient['Year'], errors='coerce')
     new_patient['Sex'] = new_patient['Sex'].astype(str)
     new_patient['Culture'] = new_patient['Culture'].astype(str)
-    #print("New Patient Data Types:\n", new_patient.dtypes)
     
-    # Check for NaN values
+    # Apply age binning
+    bins = list(range(0, 110, 10))
+    labels = [f"{i}-{i+10}" for i in range(0, 100, 10)]
+    new_patient['Age_Bin'] = pd.cut(new_patient['Age'], bins=bins, labels=labels, right=False)
+    
+    # Drop original Age column since only Age_Bin is used
+    new_patient = new_patient.drop(columns=['Age'])
+
+    # Check for NaN
     if new_patient.isnull().values.any():
         print("ERROR: NaN values detected in new_patient DataFrame!")
         print(new_patient)
         return jsonify({"error": "Invalid input data (contains NaN)."})
     
-    # Select the model pipeline
+    # Select model
     if model_type == 'lr':
         pipeline, target_columns, metrics = lr_pipeline, lr_target_colume, lr_metrics
     elif model_type == 'xgb':
@@ -281,70 +294,54 @@ def predict_hero():
         pipeline, target_columns, metrics = rf_pipeline, rf_target_colume, rf_metrics
     else:
         pipeline, target_columns, metrics = svm_pipeline, svm_target_colume, svm_metrics
-    # Perform prediction
+
+    # Predict
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
     print("Target Columns:", target_columns)
     print("Prediction Dictionary:", prediction)
-    
+
     # Load dataset
     dataset = pd.read_excel('Urine Dataset.xlsx')
-    
-    
-    # Convert dataset columns to standard types
     dataset['Sex'] = dataset['Sex'].astype(str)
     dataset['Culture'] = dataset['Culture'].astype(str)
     dataset['Specimen_Type'] = dataset['Specimen_Type'].str.strip().str.upper()
     dataset['Age'] = pd.to_numeric(dataset['Age'], errors='coerce')
     dataset['Year'] = pd.to_numeric(dataset['Year'], errors='coerce')
+
+    # Apply same binning
+    dataset['Age_Bin'] = pd.cut(dataset['Age'], bins=bins, labels=labels, right=False)
     
-    #print("Dataset Head (after standardization):\n", dataset.head())
-    #print("Dataset Data Types:\n", dataset.dtypes)
-    
-    # Debugging: Check unique values in dataset
-    #print("Checking mismatches...")
-    #print("Unique dataset Sex values:", dataset['Sex'].unique())
-    #print("Unique dataset Specimen_Type values:", dataset['Specimen_Type'].unique())
-    #print("Min and Max Age in dataset:", dataset['Age'].min(), dataset['Age'].max())
-    
-    # Filter dataset for matching values
-    print("Filtering dataset for matching values...")
+    # Filter for matching inputs
     filtered_dataset = dataset[
         (dataset['Sex'] == new_patient['Sex'].values[0]) &
-        (dataset['Age'] == new_patient['Age'].values[0]) &
-        (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])&
+        (dataset['Age_Bin'] == new_patient['Age_Bin'].values[0]) &
+        (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0]) &
         (dataset['Culture'] == 'Escherichia coli')
     ]
     
-    
-    
+    # Load antibiotic mapping
     culture_antibiotics = pd.read_excel("Culture_Antibiotics.xlsx", sheet_name=0)
-    print("Excel File Loaded Successfully.")
-    print("Available Sheets:", culture_antibiotics.keys())
-    # Get antibiotics for "Escherichia coli"
     if "Escherichia coli" in culture_antibiotics.columns:
         ecoli_antibiotics = culture_antibiotics["Escherichia coli"].dropna().tolist()
     else:
         return jsonify({"error": "Escherichia coli antibiotics not found in culture_antibiotics.xlsx"})
-    
+
     resistance_status = []
     for col in target_columns:
-        if col not in ecoli_antibiotics:  # **Filter only relevant antibiotics**
+        if col not in ecoli_antibiotics:
             print(f"Skipping {col} (Not in culture_antibiotics.xlsx)")
             continue
-        
-
 
         total_resistant = int((filtered_dataset[col] == -1).sum())
         total_sensitive = int((filtered_dataset[col] == 1).sum())
         total_notused = int((filtered_dataset[col] == 0).sum())
-        total_valid = total_resistant + total_sensitive +  total_notused
+        total_valid = total_resistant + total_sensitive + total_notused
         
         resistance_R = int((total_resistant / total_valid) * 100) if total_valid > 0 else 0
         sensitive_S = int((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
         notused_N = int((total_notused / total_valid) * 100) if total_valid > 0 else 0
         
-         # Correct resistance status logic
         if prediction[col] == 1:
             status = "Sensitive"
         elif prediction[col] == 0:
@@ -358,12 +355,14 @@ def predict_hero():
             "resistance": round(resistance_R, 2),
             "sensitive": round(sensitive_S, 2),
             "notused": round(notused_N, 2),
-            "total_resistant_patients": total_resistant,  
-            "total_sensitive_patients": total_sensitive,  
+            "total_resistant_patients": total_resistant,
+            "total_sensitive_patients": total_sensitive,
             "total_notused_patients": total_notused
         })
-        print("Final Resistance Status:", resistance_status)
+
+    print("Final Resistance Status:", resistance_status)
     return jsonify({"predictions": resistance_status})
+
 
 
 
