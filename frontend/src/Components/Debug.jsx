@@ -44,20 +44,30 @@ function Debug() {
 								<th className="py-2 px-4 border-b">Antibiotic not used (%)</th>
 								<th className="py-2 px-4 border-b">Resistant Count</th>
 								<th className="py-2 px-4 border-b">Sensitive Count</th>
-								<th className="py-2 px-4 border-b">Antibiotic not tested Count</th>
+								<th className="py-2 px-4 border-b">
+									Antibiotic not tested Count
+								</th>
 							</tr>
 						</thead>
 						<tbody>
 							{response.data.predictions.map((item, index) => (
 								<tr key={index} className="hover:bg-gray-700">
 									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
-									<td className="py-2 px-4 border-b font-semibold">{item.resistance_status}</td>
+									<td className="py-2 px-4 border-b font-semibold">
+										{item.resistance_status}
+									</td>
 									<td className="py-2 px-4 border-b">{item.resistance}%</td>
 									<td className="py-2 px-4 border-b">{item.sensitive}%</td>
 									<td className="py-2 px-4 border-b">{item.notused}%</td>
-									<td className="py-2 px-4 border-b">{item.total_resistant_patients}</td>
-									<td className="py-2 px-4 border-b">{item.total_sensitive_patients}</td>
-									<td className="py-2 px-4 border-b">{item.total_notused_patients}</td>
+									<td className="py-2 px-4 border-b">
+										{item.total_resistant_patients}
+									</td>
+									<td className="py-2 px-4 border-b">
+										{item.total_sensitive_patients}
+									</td>
+									<td className="py-2 px-4 border-b">
+										{item.total_notused_patients}
+									</td>
 								</tr>
 							))}
 						</tbody>
@@ -69,10 +79,6 @@ function Debug() {
 			alert("An error occurred while processing your request.");
 		}
 	};
-
-	useEffect(() => {
-		handleSubmit();
-	}, []);
 
 	return (
 		<>
@@ -86,8 +92,12 @@ function Debug() {
 							onChange={(e) => setPatientType(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>Select Type</option>
-							<option value="IPD" disabled>IPD</option>
+							<option value="" disabled>
+								Select Type
+							</option>
+							<option value="IPD" disabled>
+								IPD
+							</option>
 							<option value="OPD">OPD</option>
 						</select>
 
@@ -97,12 +107,22 @@ function Debug() {
 							onChange={(e) => setSpecimenType(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>Select Specimen</option>
+							<option value="" disabled>
+								Select Specimen
+							</option>
 							<option value="Urine">Urine</option>
-							<option value="Stool" disabled>Stool</option>
-							<option value="Blood" disabled>Blood</option>
-							<option value="Swab" disabled>Swab</option>
-							<option value="Pus" disabled>Pus</option>
+							<option value="Stool" disabled>
+								Stool
+							</option>
+							<option value="Blood" disabled>
+								Blood
+							</option>
+							<option value="Swab" disabled>
+								Swab
+							</option>
+							<option value="Pus" disabled>
+								Pus
+							</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
@@ -111,7 +131,9 @@ function Debug() {
 							onChange={(e) => setGender(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>Select Gender</option>
+							<option value="" disabled>
+								Select Gender
+							</option>
 							<option value="Male">Male</option>
 							<option value="Female">Female</option>
 						</select>
@@ -133,7 +155,9 @@ function Debug() {
 							onChange={(e) => setModal(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
-							<option value="" disabled>Select Model</option>
+							<option value="" disabled>
+								Select Model
+							</option>
 							<option value="lr">LR</option>
 							<option value="knn">KNN</option>
 							<option value="xgb">XG BOOST</option>

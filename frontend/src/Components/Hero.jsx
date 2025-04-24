@@ -80,10 +80,6 @@ function Hero() {
 		}
 	};
 
-	useEffect(() => {
-		handleSubmit();
-	}, []);
-
 	return (
 		<>
 			<div className="grid grid-cols-1 md:grid-cols-2 items-center gap-6 px-4 md:px-10 bg-white bg-opacity-10 rounded-3xl bg-clip-padding mt-4">
@@ -148,7 +144,7 @@ function Hero() {
 							value={age}
 							onChange={(e) => setAge(e.target.value)}
 							placeholder="Enter Age"
-							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
+							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10 placeholder:text-orange-500"
 							min="1"
 							max="100"
 						/>
@@ -158,20 +154,22 @@ function Hero() {
 							onChange={(e) => setmodel(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
+							<option value="" disabled>
+								Select Model
+							</option>
 							<option value="knn">KNN</option>
 							<option value="svm">SVM</option>
 							<option value="rf">Random Forest</option>
 							<option value="lr">LR</option>
 							<option value="xgb">XGboost</option>
 						</select>
-						
+
 						<button
 							onClick={handleSubmit}
 							className="text-white bg-orange-500 mt-8 border-[2px] border-transparent rounded-full text-[15px] px-6 py-1 cursor-pointer"
 						>
 							Get Recommendations
 						</button>
-						
 					</div>
 				</div>
 

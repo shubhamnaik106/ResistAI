@@ -8,7 +8,7 @@ function About() {
 				data-aos-easing="ease-out"
 				data-aos-duration="1000"
 			>
-				<h2 className="text-4xl text-white font-bold">About ResistAI</h2>
+				<h2 className="text-4xl text-white font-bold mt-4">About ResistAI</h2>
 				<p className=" text-slate-200">
 					ResistAI is an intelligent clinical decision support tool designed to
 					fight antimicrobial resistance (AMR).

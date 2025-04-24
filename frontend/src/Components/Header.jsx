@@ -34,6 +34,11 @@ function Header({ setActiveSection }) {
 			title: "DEBUG",
 			action: () => setActiveSection("debug"),
 		},
+		{
+			id: 5,
+			title: "MANAGE",
+			action: () => setActiveSection("manage"),
+		},
 	];
 
 	const handleClose = () => {
