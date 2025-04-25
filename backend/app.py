@@ -309,9 +309,35 @@ def predict_hero():
     
     # Filter dataset for matching values
     print("Filtering dataset for matching values...")
+    age_range = new_patient['Age'].values[0]
+    if 0 <= age_range < 10:
+        age_min, age_max = 0, 10
+    elif 10 <= age_range < 20:
+        age_min, age_max = 10, 20
+    elif 20 <= age_range < 30:
+        age_min, age_max = 20, 30
+    elif 30 <= age_range < 40:
+        age_min, age_max = 30, 40
+    elif 40 <= age_range < 50:
+        age_min, age_max = 40, 50
+    elif 50 <= age_range < 60:
+        age_min, age_max = 50, 60
+    elif 60 <= age_range < 70:
+        age_min, age_max = 60, 70
+    elif 70 <= age_range < 80:
+        age_min, age_max = 70, 80
+    elif 80 <= age_range < 90:
+        age_min, age_max = 80, 90
+    elif 90 <= age_range <= 100:
+        age_min, age_max = 90, 100
+    
+
+
+
     filtered_dataset = dataset[
         (dataset['Sex'] == new_patient['Sex'].values[0]) &
-        (dataset['Age'] == new_patient['Age'].values[0]) &
+        (dataset['Age'] >= age_min) &
+        (dataset['Age'] < age_max)  &
         (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])&
         (dataset['Culture'] == 'Escherichia coli')
     ]
@@ -378,7 +404,7 @@ def predict_trends():
     data = request.get_json()
     print("Received Trends Request:", data)
 
-    age = data.get('age', None)  # Could be None
+    age_range = data.get('age', None)  # Could be None
     gender = data.get('gender', None)  # Could be None
     specimen_type = data.get('specimenType', '').strip().upper()
     antibiotic_of_interest = data.get('antibiotic', '').strip()
@@ -405,8 +431,29 @@ def predict_trends():
             filtered_dataset = filtered_dataset[filtered_dataset['Sex'] == sex]
 
     # Apply age filter only if provided
-    if age is not None:
-        filtered_dataset = filtered_dataset[filtered_dataset['Age'] == age]
+    if age_range is not None:
+        if 0 <= age_range < 10:
+            age_min, age_max = 0, 10
+        elif 10 <= age_range < 20:
+            age_min, age_max = 10, 20
+        elif 20 <= age_range < 30:
+            age_min, age_max = 20, 30
+        elif 30 <= age_range < 40:
+            age_min, age_max = 30, 40
+        elif 40 <= age_range < 50:
+            age_min, age_max = 40, 50
+        elif 50 <= age_range < 60:
+            age_min, age_max = 50, 60
+        elif 60 <= age_range < 70:
+            age_min, age_max = 60, 70
+        elif 70 <= age_range < 80:
+            age_min, age_max = 70, 80
+        elif 80 <= age_range < 90:
+            age_min, age_max = 80, 90
+        elif 90 <= age_range <= 100:
+            age_min, age_max = 90, 100
+        filtered_dataset = filtered_dataset[(filtered_dataset['Age'] >= age_min) &
+        (filtered_dataset['Age'] < age_max)]
 
     # Apply specimen type filter only if provided
     if specimen_type:
