@@ -26,18 +26,18 @@ function Header({ setActiveSection }) {
 		},
 		{
 			id: 3,
-			title: "ABOUT",
-			action: () => setActiveSection("about"),
-		},
-		{
-			id: 4,
 			title: "DEBUG",
 			action: () => setActiveSection("debug"),
 		},
 		{
-			id: 5,
+			id: 4,
 			title: "MANAGE",
 			action: () => setActiveSection("manage"),
+		},
+		{
+			id: 5,
+			title: "ABOUT",
+			action: () => setActiveSection("about"),
 		},
 	];
 

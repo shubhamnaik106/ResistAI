@@ -19,9 +19,9 @@ function App() {
 
 			{activeSection === "home" && <Hero />}
 			{activeSection === "trends" && <Trends />}
-			{activeSection === "about" && <About />}
 			{activeSection === "debug" && <Debug />}
 			{activeSection === "manage" && <Manage />}
+			{activeSection === "about" && <About />}
 		</div>
 	);
 }
