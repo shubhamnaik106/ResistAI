@@ -64,8 +64,7 @@ def train_LR():
     features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
     targets = data.columns[5:]
     X = data[features]
-    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
-
+    y = data[targets]
     # Drop non-numeric or invalid columns
     y = y.apply(pd.to_numeric, errors='coerce')
     y = y.dropna(axis=1)
@@ -106,7 +105,7 @@ def train_KNN():
     features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
     targets = data.columns[5:]
     X = data[features]
-    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+    y = data[targets]
 
     # Drop non-numeric or invalid columns
     y = y.apply(pd.to_numeric, errors='coerce')
@@ -149,7 +148,7 @@ def train_RD():
     features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
     targets = data.columns[5:]
     X = data[features]
-    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+    y = data[targets]
 
     # Drop non-numeric or invalid columns
     y = y.apply(pd.to_numeric, errors='coerce')
@@ -192,7 +191,7 @@ def train_SVM():
     features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
     targets = data.columns[5:]
     X = data[features]
-    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+    y = data[targets]
 
     # Drop non-numeric or invalid columns
     y = y.apply(pd.to_numeric, errors='coerce')
