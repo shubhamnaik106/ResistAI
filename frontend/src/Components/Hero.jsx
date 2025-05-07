@@ -111,18 +111,10 @@ function Hero() {
 								Select Specimen
 							</option>
 							<option value="Urine">Urine</option>
-							<option value="Stool" disabled>
-								Stool
-							</option>
-							<option value="Blood" disabled>
-								Blood
-							</option>
-							<option value="Swab" disabled>
-								Swab
-							</option>
-							<option value="Pus" disabled>
-								Pus
-							</option>
+							<option value="Stool">Stool</option>
+							<option value="Blood">Blood</option>
+							<option value="Swab">Swab</option>
+							<option value="Pus">Pus</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
