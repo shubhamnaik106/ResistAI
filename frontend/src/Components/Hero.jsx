@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 function Hero() {
@@ -15,8 +15,8 @@ function Hero() {
 			return;
 		}
 
-		if (age <= 0 || age > 100) {
-			alert("Age must be between 1 and 100.");
+		if (age <= 40 || age >= 80) {
+			alert("Age must be between 40 and 80 for best results.");
 			return;
 		}
 
@@ -111,18 +111,10 @@ function Hero() {
 								Select Specimen
 							</option>
 							<option value="Urine">Urine</option>
-							<option value="Stool" disabled>
-								Stool
-							</option>
-							<option value="Blood" disabled>
-								Blood
-							</option>
-							<option value="Swab" disabled>
-								Swab
-							</option>
-							<option value="Pus" disabled>
-								Pus
-							</option>
+							<option value="Stool">Stool</option>
+							<option value="Blood">Blood</option>
+							<option value="Swab">Swab</option>
+							<option value="Pus">Pus</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
@@ -166,7 +158,10 @@ function Hero() {
 
 						<button
 							onClick={handleSubmit}
-							className="text-white bg-orange-500 mt-8 border-[2px] border-transparent rounded-full text-[15px] px-6 py-1 cursor-pointer"
+							className="text-white bg-orange-500 mt-8 border-[2px] border-transparent rounded-full text-[15px] px-6 py-1 cursor-pointer disabled:opacity-35"
+							disabled={
+								!patientType || !specimenType || !gender || !age || !model
+							}
 						>
 							Get Recommendations
 						</button>
