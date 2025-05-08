@@ -19,12 +19,39 @@ CORS(app, resources={r"/predict_trends": {"origins": "http://localhost:5000"},
     r"/predict_hero": {"origins": "http://localhost:5000"},
     r"/get_antibiotics": {"origins": "http://localhost:5000"}
     })
+
+
+def get_age_group(age):
+    #print("Age is : ",age)
+    if 0 <= age < 10:
+        return '0-10'
+    elif 10 <= age < 20:
+        return '10-20'
+    elif 20 <= age < 30:
+        return '20-30'
+    elif 30 <= age < 40:
+        return '30-40'
+    elif 40 <= age < 50:
+        return '40-50'
+    elif 50 <= age < 60:
+        return '50-60'
+    elif 60 <= age < 70:
+        return '60-70'
+    elif 70 <= age < 80:
+        return '70-80'
+    elif 80 <= age < 90:
+        return '80-90'
+    elif 90 <= age <= 100:
+        return '90-100'
+    else:
+        return 'Unknown'
 def train_XGB():
     data = pd.read_excel('Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
-    
-    features = ['Year','Sex', 'Age', 'Specimen_Type']
+    data['Culture'] = data['Culture'].astype(str)
+    data['Age_Group'] = data['Age'].apply(get_age_group)
+    features = ['Year','Sex', 'Culture', 'Specimen_Type','Age_Group']
     targets = data.columns[5:]  
 
     X = data[features]
@@ -34,8 +61,8 @@ def train_XGB():
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age','Year']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type'])
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Year','Sex', 'Culture', 'Specimen_Type','Age_Group'])
         ]
     )
 
@@ -56,53 +83,61 @@ def train_XGB():
     
     return pipeline, y_train.columns, metrics
 
+
+
 def train_LR():
     data = pd.read_excel('Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    data['Age_Group'] = data['Age'].apply(get_age_group)
+    #data = data[data['Age_Bin'] != 'Unknown']  # remove out-of-range ages
+
+    features = ['Year', 'Sex', 'Specimen_Type', 'Culture', 'Age_Group']
     targets = data.columns[5:]
+
     X = data[features]
-    y = data[targets]
-    # Drop non-numeric or invalid columns
-    y = y.apply(pd.to_numeric, errors='coerce')
-    y = y.dropna(axis=1)
+    y = data[targets].apply(pd.to_numeric, errors='coerce').dropna(axis=1)
+
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age','Year']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type', 'Culture', 'Age_Group'])
         ]
     )
-    
+
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
         ('classifier', MultiOutputClassifier(LogisticRegression(max_iter=1000, random_state=42)))
     ])
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    
+
     single_class_targets = [col for col in y_train.columns if len(y_train[col].unique()) == 1]
-    if single_class_targets:
-        y_train = y_train.drop(columns=single_class_targets)
-        y_test = y_test.drop(columns=single_class_targets)
-    
+    y_train = y_train.drop(columns=single_class_targets, errors='ignore')
+    y_test = y_test.drop(columns=single_class_targets, errors='ignore')
+
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
-    
+
     metrics = [
-        {"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
-}
+        {
+            "antibiotic": col,
+            "accuracy": accuracy_score(y_test[col], y_pred[:, i]),
+            "sensitivity": recall_score(y_test[col], y_pred[:, i], average="macro")
+        }
         for i, col in enumerate(y_train.columns)
     ]
-    
+
     return pipeline, y_train.columns, metrics
+
 def train_KNN():
     data = pd.read_excel('Urine Dataset.xlsx')
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    data['Age_Group'] = data['Age'].apply(get_age_group)
+    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture','Age_Group']
     targets = data.columns[5:]
     X = data[features]
     y = data[targets]
@@ -112,14 +147,14 @@ def train_KNN():
     y = y.dropna(axis=1)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age','Year']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture','Age_Group'])
         ]
     )
     
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
-        ('classifier', MultiOutputClassifier(KNeighborsClassifier(n_neighbors=5)))
+        ('classifier', MultiOutputClassifier(KNeighborsClassifier(n_neighbors=10)))
     ])
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -145,7 +180,9 @@ def train_RD():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    data['Age_Group'] = data['Age'].apply(get_age_group)
+
+    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture','Age_Group']
     targets = data.columns[5:]
     X = data[features]
     y = data[targets]
@@ -155,8 +192,8 @@ def train_RD():
     y = y.dropna(axis=1)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age','Year']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture', 'Age_Group'])
         ]
     )
     
@@ -188,7 +225,8 @@ def train_SVM():
     data['Sex'] = data['Sex'].astype(str)
     data['Specimen_Type'] = data['Specimen_Type'].astype(str)
     data['Culture'] = data['Culture'].astype(str)
-    features = ['Year','Sex', 'Age', 'Specimen_Type', 'Culture']
+    data['Age_Group'] = data['Age'].apply(get_age_group)
+    features = ['Year','Sex', 'Specimen_Type', 'Culture','Age_Group']
     targets = data.columns[5:]
     X = data[features]
     y = data[targets]
@@ -199,8 +237,8 @@ def train_SVM():
     
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Age','Year']),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture'])
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type','Culture','Age_Group'])
         ]
     )
     
@@ -239,7 +277,7 @@ rf_pipeline, rf_target_colume, rf_metrics = train_RD()
 def predict_hero():
     data = request.get_json()
     print("Received JSON Data:", data)
-    
+    print("returned age ",data['age']) 
     model_type = data["model"] # Model selection
     
     # Map gender to match dataset values
@@ -247,17 +285,24 @@ def predict_hero():
     new_gen = sex_mapping.get(data['gender'], 'Unknown')
     
     years = ['2023', '2022', '2024']
-    new_patient = pd.DataFrame({
-        'Sex': [new_gen]* len(years),
-        'Age': [data['age']]* len(years),
-        'Specimen_Type': [data['specimenType'].strip().upper()]* len(years),
-        'Culture' : ['Escherichia coli']* len(years),
-        'Year': years
-    })
     
-    
-    # Convert data types
-    new_patient['Age'] = pd.to_numeric(new_patient['Age'], errors='coerce')
+
+    age_label = str(get_age_group(int(data['age'])) )#modal age range as str
+    print("Age label ",age_label)
+
+    rows = []
+    for year in years:
+        rows.append({
+            'Sex': new_gen,
+            'Specimen_Type': data['specimenType'].strip().upper(),
+            'Culture': 'Escherichia coli',
+            'Year': year,
+            'Age_Group': age_label,
+            'Age' : data['age']
+        })
+
+    new_patient = pd.DataFrame(rows)
+
     new_patient['Year'] = pd.to_numeric(new_patient['Year'], errors='coerce')
     new_patient['Sex'] = new_patient['Sex'].astype(str)
     new_patient['Culture'] = new_patient['Culture'].astype(str)
@@ -283,8 +328,8 @@ def predict_hero():
     # Perform prediction
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
-    print("Target Columns:", target_columns)
-    print("Prediction Dictionary:", prediction)
+    #print("Target Columns:", target_columns)
+    #print("Prediction Dictionary:", prediction)
     
     # Load dataset
     dataset = pd.read_excel('Urine Dataset.xlsx')
@@ -307,7 +352,7 @@ def predict_hero():
     #print("Min and Max Age in dataset:", dataset['Age'].min(), dataset['Age'].max())
     
     # Filter dataset for matching values
-    print("Filtering dataset for matching values...")
+    #print("Filtering dataset for matching values...")
     age_range = new_patient['Age'].values[0]
     if 0 <= age_range < 10:
         age_min, age_max = 0, 10
@@ -344,8 +389,8 @@ def predict_hero():
     
     
     culture_antibiotics = pd.read_excel("Culture_Antibiotics.xlsx", sheet_name=0)
-    print("Excel File Loaded Successfully.")
-    print("Available Sheets:", culture_antibiotics.keys())
+    #print("Excel File Loaded Successfully.")
+    #print("Available Sheets:", culture_antibiotics.keys())
     # Get antibiotics for "Escherichia coli"
     if "Escherichia coli" in culture_antibiotics.columns:
         ecoli_antibiotics = culture_antibiotics["Escherichia coli"].dropna().tolist()
@@ -377,6 +422,18 @@ def predict_hero():
         else:
             status = "Resistant"
 
+        if status == "Sensitive":
+            if resistance_R>sensitive_S:
+                status = "Resistant"
+
+        elif status == "Resistant":
+            if sensitive_S>resistance_R:
+                status = "Sensitive"
+            elif sensitive_S == resistance_R:
+                status = "Sensitive"
+                
+            
+
         resistance_status.append({
             "antibiotic": col,
             "resistance_status": status,
@@ -387,7 +444,7 @@ def predict_hero():
             "total_sensitive_patients": total_sensitive,  
             "total_notused_patients": total_notused
         })
-        print("Final Resistance Status:", resistance_status)
+        #print("Final Resistance Status:", resistance_status)
     return jsonify({"predictions": resistance_status})
 
 
@@ -464,7 +521,9 @@ def predict_trends():
 
     col = antibiotic_of_interest
     yearly_stats = []
-    year_filter = filtered_dataset['Year'].dropna().unique()
+    year_filter = [
+    year for year in filtered_dataset['Year'].dropna().unique()
+    if len(filtered_dataset[filtered_dataset['Year'] == year]) > 10]
 
     for year in sorted(year_filter):
         year_data = filtered_dataset[filtered_dataset['Year'] == year]
