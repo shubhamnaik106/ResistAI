@@ -3,6 +3,7 @@ import axios from "axios";
 
 function Hero() {
 	const [specimenType, setSpecimenType] = useState("");
+	const [cultureType, setCultureType] = useState("");
 	const [patientType, setPatientType] = useState("");
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
@@ -23,6 +24,7 @@ function Hero() {
 		try {
 			const response = await axios.post("http://localhost:5005/predict_hero", {
 				type: patientType,
+				//cultureType: cultureType,
 				specimenType: specimenType,
 				gender: gender,
 				model: model,
@@ -56,9 +58,15 @@ function Hero() {
 									<td className="py-2 px-4 border-b font-semibold">
 										{item.resistance_status}
 									</td>
-									<td className="py-2 px-4 border-b">{item.resistance}%</td>
-									<td className="py-2 px-4 border-b">{item.sensitive}%</td>
-									<td className="py-2 px-4 border-b">{item.notused}%</td>
+									<td className="py-2 px-4 border-b bg-red-500 bg-opacity-50">
+										{item.resistance}%
+									</td>
+									<td className="py-2 px-4 border-b bg-green-500 bg-opacity-50">
+										{item.sensitive}%
+									</td>
+									<td className="py-2 px-4 border-b bg-yellow-500 bg-opacity-50">
+										{item.notused}%
+									</td>
 									<td className="py-2 px-4 border-b">
 										{item.total_resistant_patients}
 									</td>
@@ -115,6 +123,20 @@ function Hero() {
 							<option value="Blood">Blood</option>
 							<option value="Swab">Swab</option>
 							<option value="Pus">Pus</option>
+						</select>
+
+						<p className="text-white text-xl mt-4">Enter Type of Culture</p>
+						<select
+							value={cultureType}
+							onChange={(e) => setCultureType(e.target.value)}
+							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
+						>
+							<option value="" disabled>
+								Select Culture
+							</option>
+							<option value="Urine">Escherichia Coli</option>
+							<option value="Stool">Klebsiella Pneumoniae</option>
+							<option value="Blood">Yeast Candida</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
