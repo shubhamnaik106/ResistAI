@@ -414,7 +414,7 @@ def predict_hero():
         sensitive_S = int((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
         notused_N = int((total_notused / total_valid) * 100) if total_valid > 0 else 0
         
-         # Correct resistance status logic
+        # Correct resistance status logic
         if prediction[col] == 1:
             status = "Sensitive"
         elif prediction[col] == 0:

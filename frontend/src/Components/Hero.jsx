@@ -123,6 +123,7 @@ function Hero() {
 							<option value="Blood">Blood</option>
 							<option value="Swab">Swab</option>
 							<option value="Pus">Pus</option>
+							<option value="Sputum">Sputum</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Type of Culture</p>

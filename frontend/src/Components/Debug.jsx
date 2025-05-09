@@ -1,40 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 function Debug() {
 	const [specimenType, setSpecimenType] = useState("");
+	const [cultureType, setCultureType] = useState("");
 	const [patientType, setPatientType] = useState("");
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
-	const [modal, setModal] = useState("");
-	const [displayText, setDisplayText] = useState("Debugging !!!!!!!!!!");
+	const [model, setmodel] = useState("");
+	const [displayText, setDisplayText] = useState("Debugging !!!!!!!!!!!!!!!");
 
 	const handleSubmit = async () => {
-		if (!patientType || !gender || !age || !specimenType || !modal) {
+		if (!patientType || !gender || !age || !specimenType || !model) {
 			alert("Please fill in all the fields before submitting.");
 			return;
 		}
 
-		if (age <= 0 || age > 100) {
-			alert("Age must be between 1 and 100.");
+		if (age <= 40 || age >= 80) {
+			alert("Age must be between 40 and 80 for best results.");
 			return;
 		}
 
 		try {
-			const response = await axios.post("http://localhost:5005/", {
+			const response = await axios.post("http://localhost:5005/predict_hero", {
 				type: patientType,
+				//cultureType: cultureType,
 				specimenType: specimenType,
 				gender: gender,
+				model: model,
 				age: parseInt(age, 10),
-				modal: modal,
 			});
 
 			setDisplayText(
 				<div className="overflow-auto max-h-96">
 					<h2 className="text-2xl font-bold mb-4 text-white">
-						Prediction Results (Debug)
+						Prediction Results
 					</h2>
-					<table className="min-w-full md:mb-0 bg-transparent border border-orange-500 rounded-lg">
+					<table className="min-w-full md:mb-0 mb- bg-transparent border border-orange-500 rounded-lg">
 						<thead className="bg-white bg-opacity-10 text-white">
 							<tr>
 								<th className="py-2 px-4 border-b">Antibiotic</th>
@@ -56,9 +58,15 @@ function Debug() {
 									<td className="py-2 px-4 border-b font-semibold">
 										{item.resistance_status}
 									</td>
-									<td className="py-2 px-4 border-b">{item.resistance}%</td>
-									<td className="py-2 px-4 border-b">{item.sensitive}%</td>
-									<td className="py-2 px-4 border-b">{item.notused}%</td>
+									<td className="py-2 px-4 border-b bg-red-500 bg-opacity-50">
+										{item.resistance}%
+									</td>
+									<td className="py-2 px-4 border-b bg-green-500 bg-opacity-50">
+										{item.sensitive}%
+									</td>
+									<td className="py-2 px-4 border-b bg-yellow-500 bg-opacity-50">
+										{item.notused}%
+									</td>
 									<td className="py-2 px-4 border-b">
 										{item.total_resistant_patients}
 									</td>
@@ -111,18 +119,25 @@ function Debug() {
 								Select Specimen
 							</option>
 							<option value="Urine">Urine</option>
-							<option value="Stool" disabled>
-								Stool
+							<option value="Stool">Stool</option>
+							<option value="Blood">Blood</option>
+							<option value="Swab">Swab</option>
+							<option value="Pus">Pus</option>
+							<option value="Sputum">Sputum</option>
+						</select>
+
+						<p className="text-white text-xl mt-4">Enter Type of Culture</p>
+						<select
+							value={cultureType}
+							onChange={(e) => setCultureType(e.target.value)}
+							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
+						>
+							<option value="" disabled>
+								Select Culture
 							</option>
-							<option value="Blood" disabled>
-								Blood
-							</option>
-							<option value="Swab" disabled>
-								Swab
-							</option>
-							<option value="Pus" disabled>
-								Pus
-							</option>
+							<option value="Urine">Escherichia Coli</option>
+							<option value="Stool">Klebsiella Pneumoniae</option>
+							<option value="Blood">Yeast Candida</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>
@@ -144,30 +159,32 @@ function Debug() {
 							value={age}
 							onChange={(e) => setAge(e.target.value)}
 							placeholder="Enter Age"
-							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
+							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10 placeholder:text-orange-500"
 							min="1"
 							max="100"
 						/>
-
-						<p className="text-white text-xl mt-4">Select Model</p>
+						<p className="text-white text-xl mt-4">Enter Model</p>
 						<select
-							value={modal}
-							onChange={(e) => setModal(e.target.value)}
+							value={model}
+							onChange={(e) => setmodel(e.target.value)}
 							className="p-3 rounded-md text-orange-500 bg-orange-500 bg-opacity-10"
 						>
 							<option value="" disabled>
 								Select Model
 							</option>
-							<option value="lr">LR</option>
 							<option value="knn">KNN</option>
-							<option value="xgb">XG BOOST</option>
-							<option value="svn">SVN</option>
-							<option value="rf">RANDOM FOREST</option>
+							<option value="svm">SVM</option>
+							<option value="rf">Random Forest</option>
+							<option value="lr">LR</option>
+							<option value="xgb">XGboost</option>
 						</select>
 
 						<button
 							onClick={handleSubmit}
-							className="text-white bg-orange-500 mt-8 border-[2px] border-transparent rounded-full text-[15px] px-6 py-1 cursor-pointer"
+							className="text-white bg-orange-500 mt-8 border-[2px] border-transparent rounded-full text-[15px] px-6 py-1 cursor-pointer disabled:opacity-35"
+							disabled={
+								!patientType || !specimenType || !gender || !age || !model
+							}
 						>
 							Get Recommendations
 						</button>
