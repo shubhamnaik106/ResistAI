@@ -164,9 +164,7 @@ function Trends() {
 				<button
 					onClick={handleGetTrends}
 					className="text-white bg-orange-500 rounded-full px-6 py-2 disabled:opacity-35"
-					disabled={
-						!patientType || !specimenType || !selectedAb || !gender || !age
-					}
+					disabled={!patientType || !specimenType || !selectedAb}
 				>
 					Get Trends
 				</button>
