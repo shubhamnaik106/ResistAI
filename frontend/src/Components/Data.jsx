@@ -11,17 +11,18 @@ function Data() {
 	};
 
 	const handleUpload = async () => {
-		if (!file || file.type !== "application/zip") {
-			alert("Please select a valid ZIP file.");
-			return;
-		}
+		const validTypes = ["application/zip", "application/x-zip-compressed", "application/octet-stream", ""];
+if (!file || !validTypes.includes(file.type)) {
+	alert("Please select a valid ZIP file.");
+	return;
+}
 
 		const formData = new FormData();
 		formData.append("file", file);
 
 		try {
 			const response = await axios.post(
-				"http://localhost:5005/upload_zip",
+				"http://localhost:5005/data_processing",
 				formData,
 				{
 					headers: {

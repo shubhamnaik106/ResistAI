@@ -1,2 +1,4 @@
 #model dataset
 *.xlsx
+*.csv
+*.zip

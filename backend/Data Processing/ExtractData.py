@@ -3,11 +3,14 @@ import docx
 import csv
 import re
 import pandas as pd
+import zipfile
+import io
 from openpyxl import load_workbook
 
 # Folder path
-folder_path = r"C:\Users\Steph\AMR\ResistAI\backend\Data Processing\ASTER"  # Change this to your folder path
+#folder_path = r"C:\Users\Steph\AMR\ResistAI\backend\Data Processing\ASTER"  # Change this to your folder path
 csv_file = "ASTER.csv"  # Output
+zip_path = r"C:\Users\Steph\AMR\ResistAI\backend\upload\ASTER.zip"
 
 # Column Header (Updated header as per request)
 columns = [
@@ -98,58 +101,44 @@ with open(csv_file, mode="w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(columns)  # Write column headers
 
-    for docx_file in os.listdir(folder_path):
-        if docx_file.endswith(".docx"):
-            doc_path = os.path.join(folder_path, docx_file)
-            doc = docx.Document(doc_path)
-            text = "\n".join([p.text for p in doc.paragraphs])
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        docx_files = [f for f in zip_ref.namelist() if f.endswith(".docx")]
+        for docx_name in docx_files:
+            with zip_ref.open(docx_name) as docx_file:
+                doc = docx.Document(io.BytesIO(docx_file.read()))
+                text = "\n".join([p.text for p in doc.paragraphs])
 
-            row_data = {}
+                row_data = {}
+                for col in patterns.keys():
+                    row_data[col] = extract_data(text, patterns[col])
 
-            # Extract values for all columns from text
-            for col in patterns.keys():
-                row_data[col] = extract_data(text, patterns[col])
-                print(f"Extracted {col}: {row_data[col]}")  # Debugging output
+                patient_info = row_data.get("Patient_Name", None)
+                if patient_info:
+                    patient_name, age, sex = patient_info
+                    name_parts = patient_name.strip().split()
+                    row_data["First_Name"] = name_parts[0] if name_parts else ""
+                    row_data["Last_Name"] = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                    row_data["Age (Yrs)"] = age
+                    row_data["Sex"] = sex
+                else:
+                    row_data["First_Name"] = ""
+                    row_data["Last_Name"] = ""
+                    row_data["Age (Yrs)"] = ""
+                    row_data["Sex"] = ""
 
-            # Handle Patient_Name specifically
-            patient_info = row_data.get("Patient_Name", None)
-            if patient_info:
-                patient_name, age, sex = patient_info
-                name_parts = patient_name.strip().split()
-                row_data["First_Name"] = name_parts[0] if name_parts else ""
-                row_data["Last_Name"] = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-                row_data["Age (Yrs)"] = age
-                row_data["Sex"] = sex
-            else:
-                # Default values if patient info is not found
-                row_data["First_Name"] = ""
-                row_data["Last_Name"] = ""
-                row_data["Age (Yrs)"] = ""
-                row_data["Sex"] = ""
+                susceptibility_results = extract_susceptibility_from_table(doc)
+                row_data.update(susceptibility_results)
 
-            # Extract antimicrobial susceptibility data from tables
-            susceptibility_results = extract_susceptibility_from_table(doc)
+                row = [
+                    clean_data(row_data.get("Collection_Date", "")),
+                    clean_data(row_data.get("Sex", "")),
+                    clean_data(row_data.get("Age (Yrs)", "")),
+                    clean_data(row_data.get("Specimen_Type", "")),
+                    clean_data(row_data.get("Bacteria", "")),
+                ] + [clean_data(row_data.get(col, "")) for col in columns[5:]]
 
-            # Add susceptibility data to row_data
-            row_data.update(susceptibility_results)
-
-            # Debugging output for susceptibility results
-            print(f"Susceptibility Results for {docx_file}: {susceptibility_results}")
-
-            # Prepare row in CSV format, clean the data before writing
-            row = [
-                clean_data(row_data.get("Collection_Date", "")),  # Add 'Year' or similar
-                clean_data(row_data.get("Sex", "")),
-                clean_data(row_data.get("Age (Yrs)", "")),
-                clean_data(row_data.get("Specimen_Type", "")),
-                clean_data(row_data.get("Bacteria", "")),  # Culture or bacteria info
-            ] + [clean_data(row_data.get(col, "")) for col in columns[5:]]
-
-            # Debugging output before writing to CSV
-            print(f"Row Data: {row}")
-            all_row.append(row)
-
-            writer.writerow(row)
+                all_row.append(row)
+                writer.writerow(row)
 # Create DataFrame from all_rows
 df = pd.DataFrame(all_row, columns=columns)
 
