@@ -39,6 +39,11 @@ function Header({ setActiveSection }) {
 			title: "ABOUT",
 			action: () => setActiveSection("about"),
 		},
+		{
+			id: 6,
+			title: "DATA PROCESSING",
+			action: () => setActiveSection("data"),
+		},
 	];
 
 	const handleClose = () => {

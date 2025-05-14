@@ -5,6 +5,7 @@ import Trends from "./Components/Trends";
 import About from "./Components/About";
 import Debug from "./Components/Debug";
 import Manage from "./Components/Manage";
+import Data from "./Components/Data";
 import { useState } from "react";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
 			{activeSection === "debug" && <Debug />}
 			{activeSection === "manage" && <Manage />}
 			{activeSection === "about" && <About />}
+			{activeSection === "data" && <Data />}
 		</div>
 	);
 }
