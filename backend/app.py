@@ -71,7 +71,7 @@ def train_LR():
     targets = data.columns[5:]
 
     X = data[features]
-    y = data[targets].replace({-1: 0, 0: 0, 1: 1, 'S': 0, 'R': 1, 'I': 0})
+    y = data[targets]
     y = y.apply(pd.to_numeric, errors='coerce').dropna(axis=1)
 
     preprocessor = ColumnTransformer(
