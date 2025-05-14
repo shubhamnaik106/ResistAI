@@ -2,6 +2,8 @@ import os
 import docx
 import csv
 import re
+import pandas as pd
+from openpyxl import load_workbook
 
 # Folder path
 folder_path = r"C:\Users\Steph\AMR\ResistAI\backend\Data Processing\ASTER"  # Change this to your folder path
@@ -57,7 +59,7 @@ def clean_data(value):
 def extract_susceptibility_from_table(doc):
     """Extracts antimicrobial susceptibility results from tables in a Word document."""
     # Initialize all antimicrobial agents as empty
-    susceptibility_data = {key: "" for key in columns[4:]}
+    susceptibility_data = {key: "" for key in columns[5:]}
 
     # Normalize column names for better matching
     column_lookup = {key.lower().replace(" ", "").replace("/", ""): key for key in susceptibility_data.keys()}
@@ -82,7 +84,7 @@ def extract_susceptibility_from_table(doc):
                     result = "S"
                 elif "RESISTANT" in result:
                     result = "R"
-                elif "INTERMEDIATE" in result:
+                elif "INTERMEDIATE" or "INTERMIDIATE" in result:
                     result = "I"
 
                 # Store only if agent exists in predefined headers
@@ -90,7 +92,7 @@ def extract_susceptibility_from_table(doc):
                     susceptibility_data[column_lookup[antimicrobial_agent]] = result
 
     return susceptibility_data
-
+all_row = []
 # Open CSV file for writing
 with open(csv_file, mode="w", newline="") as file:
     writer = csv.writer(file)
@@ -141,11 +143,75 @@ with open(csv_file, mode="w", newline="") as file:
                 clean_data(row_data.get("Age (Yrs)", "")),
                 clean_data(row_data.get("Specimen_Type", "")),
                 clean_data(row_data.get("Bacteria", "")),  # Culture or bacteria info
-            ] + [clean_data(row_data.get(col, "")) for col in columns[4:]]
+            ] + [clean_data(row_data.get(col, "")) for col in columns[5:]]
 
             # Debugging output before writing to CSV
             print(f"Row Data: {row}")
+            all_row.append(row)
 
             writer.writerow(row)
+# Create DataFrame from all_rows
+df = pd.DataFrame(all_row, columns=columns)
 
+# You can now inspect or manipulate the DataFrame before saving
+print("DataFrame preview:")
+print(df.head())
+existing_cols = df.columns.tolist()
+cols_to_drop = ['Lab_Id','Reporting_Date','First_Name','Last_Name','Doctor',
+               'Red_Blood_Cells','Pus_Cells', 'Epithelial_Cells', 'Casts', 
+               'Crystals','Amorphous_Material', 'Yeast', 'Colony_Count']
+cols_to_drop = [col for col in cols_to_drop if col in existing_cols]
+
+if cols_to_drop:
+    df = df.drop(cols_to_drop, axis=1)
+
+df = df.rename(columns={'Age (Yrs)': 'Age'})
+df = df.rename(columns={'Collection_Date': 'Year'})
+df = df.rename(columns={'Bacteria': 'Culture'})
+df['Sex'] = df['Sex'].replace({'FEMALE': 0, 'MALE': 1})
+df['Specimen_Type'] = df['Specimen_Type'].astype(str).str.extract(r",\s*'([^']+)'\)")
+df['Culture'] = df['Culture'].astype(str).str.extract(r",\s*'([^']+)'\)")
+
+df['Year'] = df['Year'].astype(str).str.extract(r"(\d{4})")
+
+antibio = columns[5:]
+df[antibio]=df[antibio].replace('R',-1)
+df[antibio]=df[antibio].replace('S',1)
+df[antibio]=df[antibio].replace('I',1)
+df[antibio] = df[antibio].replace('',0)
+df[antibio] = df[antibio].fillna(0)
+df = df.dropna(subset=['Year', 'Sex', 'Age', 'Specimen_Type', 'Culture'])
+df = df[
+    (df['Year'].astype(str).str.strip() != '') &
+    (df['Sex'].astype(str).str.strip() != '') &
+    (df['Age'].astype(str).str.strip() != '') &
+    (df['Specimen_Type'].astype(str).str.strip() != '') &
+    (df['Culture'].astype(str).str.strip() != '')
+]
+
+# Convert columns 0 to 2 (Year, Sex , Age)
+for col in df.columns[0:2]:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
+
+# Convert columns 5 onwards (antibiotics) to numeric
+for col in df.columns[5:]:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
+print(df)
+#df.to_excel("output.xlsx",index=False)
+file_path = "output.xlsx"
+sheet_name = "Sheet1"  # change if needed
+
+# Load workbook and worksheet
+book = load_workbook(file_path)
+
+# Get the number of rows in the target sheet
+if sheet_name in book.sheetnames:
+    sheet = book[sheet_name]
+    startrow = sheet.max_row
+else:
+    startrow = 0  # If the sheet doesn't exist, write from top
+
+# Use ExcelWriter with `if_sheet_exists='overlay'`
+with pd.ExcelWriter(file_path, engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
+    df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=startrow)
 print("Data successfully extracted")
