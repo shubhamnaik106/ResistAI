@@ -301,15 +301,15 @@ def predict_hero():
     for year in years:
         rows.append({
             'Sex': new_gen,
-            'Specimen_Type': data['specimenType'].strip().upper(),
-            'Culture': data['culture'],
+            'Specimen_Type': data.get('specimenType').strip().upper(),
+            'Culture': data.get('culture','Escherichia coli'),
             'Year': year,
             'Age_Group': age_label,
-            'Age' : data['age']
+            'Age' : data.get('age')
         })
     
     new_patient = pd.DataFrame(rows)
-    print(new_patient)
+    #print(new_patient)
 
     new_patient['Year'] = pd.to_numeric(new_patient['Year'], errors='coerce')
     new_patient['Sex'] = new_patient['Sex'].astype(str)
@@ -391,7 +391,7 @@ def predict_hero():
         (dataset['Age'] >= age_min) &
         (dataset['Age'] < age_max)  &
         (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])&
-        (dataset['Culture'] == data['culture'])
+        (dataset['Culture'] == data.get('culture'))
     ]
     
     
