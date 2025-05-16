@@ -9,6 +9,9 @@ function Hero() {
 	const [age, setAge] = useState("");
 	const [model, setmodel] = useState("");
 	const [displayText, setDisplayText] = useState("Loading recommendations...");
+	const [cultures, setCultures] = useState([]);
+	
+
 
 	const handleSubmit = async () => {
 		if (!patientType || !gender || !age || !specimenType || !model) {
@@ -27,6 +30,7 @@ function Hero() {
 				//cultureType: cultureType,
 				specimenType: specimenType,
 				gender: gender,
+				culture: cultureType,
 				model: model,
 				age: parseInt(age, 10),
 			});
@@ -135,9 +139,9 @@ function Hero() {
 							<option value="" disabled>
 								Select Culture
 							</option>
-							<option value="Urine">Escherichia Coli</option>
-							<option value="Stool">Klebsiella Pneumoniae</option>
-							<option value="Blood">Yeast Candida</option>
+							<option value="Escherichia coli">Escherichia Coli</option>
+							<option value="Klebsiella pneumoniae">Klebsiella Pneumoniae</option>
+							<option value="Yeast Candida">Yeast Candida</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>

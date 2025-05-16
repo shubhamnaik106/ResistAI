@@ -29,7 +29,8 @@ app = Flask(__name__)
 CORS(app, resources={r"/predict_trends": {"origins": "http://localhost:5000"},
     r"/predict_hero": {"origins": "http://localhost:5000"},
     r"/get_antibiotics": {"origins": "http://localhost:5000"},
-    r"/data_processing": {"origins": "http://localhost:5000"}
+    r"/data_processing": {"origins": "http://localhost:5000"},
+    r"/get_culture": {"origins": "http://localhost:5000"}
     })
 
 
@@ -307,7 +308,7 @@ def predict_hero():
         rows.append({
             'Sex': new_gen,
             'Specimen_Type': data['specimenType'].strip().upper(),
-            'Culture': 'Escherichia coli',
+            'Culture': data['culture'],
             'Year': year,
             'Age_Group': age_label,
             'Age' : data['age']
@@ -395,7 +396,7 @@ def predict_hero():
         (dataset['Age'] >= age_min) &
         (dataset['Age'] < age_max)  &
         (dataset['Specimen_Type'] == new_patient['Specimen_Type'].values[0])&
-        (dataset['Culture'] == 'Escherichia coli')
+        (dataset['Culture'] == data['culture'])
     ]
     
     
@@ -404,8 +405,8 @@ def predict_hero():
     #print("Excel File Loaded Successfully.")
     #print("Available Sheets:", culture_antibiotics.keys())
     # Get antibiotics for "Escherichia coli"
-    if "Escherichia coli" in culture_antibiotics.columns:
-        ecoli_antibiotics = culture_antibiotics["Escherichia coli"].dropna().tolist()
+    if data['culture'] in culture_antibiotics.columns:
+        ecoli_antibiotics = culture_antibiotics[data['culture']].dropna().tolist()
     else:
         return jsonify({"error": "Escherichia coli antibiotics not found in culture_antibiotics.xlsx"})
     
@@ -461,19 +462,14 @@ def predict_hero():
 
 
 
-
-
-
-@app.route("/predict_trends", methods=["POST"])
-
-
 @app.route('/predict_trends', methods=['POST'])
 def predict_trends():
     data = request.get_json()
     print("Received Trends Request:", data)
 
-    age_range = data.get('age', None)  # Could be None
-    gender = data.get('gender', None)  # Could be None
+    age_range = data.get('age', None)  #Could be None
+    gender = data.get('gender', None)  #Could be None
+    culture = data.get('culture','Escherichia coli') #if culture is missing E coli will be sent....
     specimen_type = data.get('specimenType', '').strip().upper()
     antibiotic_of_interest = data.get('antibiotic', '').strip()
 
@@ -489,7 +485,7 @@ def predict_trends():
     dataset['Year'] = pd.to_numeric(dataset['Year'], errors='coerce')
 
     # Filter for E. coli
-    filtered_dataset = dataset[dataset['Culture'] == 'Escherichia coli']
+    filtered_dataset = dataset[dataset['Culture'] == culture]
 
     # Apply gender filter only if provided
     if gender:
@@ -576,8 +572,20 @@ def get_antibiotics():
     print(antibiotics_list)
 
     return jsonify(antibiotics_list)
+'''
+@app.route('/get_culture', methods =['GET','POST'])
+def get_culture():
+    data = request.get_json()
 
+    
+    df = pd.read_excel('Urine Dataset.xlsx',sheet_name=0)
+    filtered = df[df['Specimen'].str.lower() == data.get('specimenType','Urine').lower()]
 
+    culture_list = filtered['Culture'].unique().tolist()
+    print(culture_list)
+    return jsonify(culture_list)
+
+'''
 
 UPLOAD_FOLDER = 'upload'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -794,7 +802,7 @@ def data_processing():
         df[col] = pd.to_numeric(df[col], errors='coerce')
     print(df)
     #df.to_excel("output.xlsx",index=False)
-    file_path = "output.xlsx"
+    file_path = "Urine Dataset.xlsx"
     sheet_name = "Sheet1"  # change if needed
 
     # Load workbook and worksheet
@@ -817,7 +825,7 @@ def data_processing():
 
 
     print(f"File saved to: {save_path}")
-    return jsonify({"message": "ZIP file uploaded successfully!"}), 200
+    return jsonify({"message": "ZIP file uploaded and processed successfully!"}), 200
     
 
 if __name__ == "__main__":
