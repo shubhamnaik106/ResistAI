@@ -279,12 +279,6 @@ def train_SVM():
     return pipeline, y_train.columns, metrics
 
 
-xgb_pipeline, xgb_columns, xgb_metrics = train_XGB()
-lr_pipeline, lr_target_colume, lr_metrics = train_LR()
-svm_pipeline, svm_target_colume, svm_metrics = train_SVM()
-knn_pipeline, knn_target_colume, knn_metrics = train_KNN()
-rf_pipeline, rf_target_colume, rf_metrics = train_RD()
-
 
 @app.route("/predict_hero", methods=["POST"])
 def predict_hero():
@@ -313,8 +307,9 @@ def predict_hero():
             'Age_Group': age_label,
             'Age' : data['age']
         })
-
+    
     new_patient = pd.DataFrame(rows)
+    print(new_patient)
 
     new_patient['Year'] = pd.to_numeric(new_patient['Year'], errors='coerce')
     new_patient['Sex'] = new_patient['Sex'].astype(str)
@@ -329,15 +324,15 @@ def predict_hero():
     
     # Select the model pipeline
     if model_type == 'lr':
-        pipeline, target_columns, metrics = lr_pipeline, lr_target_colume, lr_metrics
+        pipeline, target_columns, metrics = train_LR()
     elif model_type == 'xgb':
-        pipeline, target_columns, metrics = xgb_pipeline, xgb_columns, xgb_metrics
+        pipeline, target_columns, metrics = train_XGB()
     elif model_type == 'knn':
-        pipeline, target_columns, metrics = knn_pipeline, knn_target_colume, knn_metrics
+        pipeline, target_columns, metrics = train_KNN()
     elif model_type == 'rf':
-        pipeline, target_columns, metrics = rf_pipeline, rf_target_colume, rf_metrics
+        pipeline, target_columns, metrics =  train_RD()
     else:
-        pipeline, target_columns, metrics = svm_pipeline, svm_target_colume, svm_metrics
+        pipeline, target_columns, metrics = train_SVM()
     # Perform prediction
     new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
@@ -426,7 +421,7 @@ def predict_hero():
         resistance_R = int((total_resistant / total_valid) * 100) if total_valid > 0 else 0
         sensitive_S = int((total_sensitive / total_valid) * 100) if total_valid > 0 else 0
         notused_N = int((total_notused / total_valid) * 100) if total_valid > 0 else 0
-        
+        metric = next((m for m in metrics if m["antibiotic"] == col), {})
         # Correct resistance status logic
         if prediction[col] == 1:
             status = "Sensitive"
@@ -445,7 +440,7 @@ def predict_hero():
             elif sensitive_S == resistance_R:
                 status = "Sensitive"
                 
-            
+           
 
         resistance_status.append({
             "antibiotic": col,
@@ -455,7 +450,8 @@ def predict_hero():
             "notused": round(notused_N, 2),
             "total_resistant_patients": total_resistant,  
             "total_sensitive_patients": total_sensitive,  
-            "total_notused_patients": total_notused
+            "total_notused_patients": total_notused,
+            "matrix": metric
         })
         #print("Final Resistance Status:", resistance_status)
     return jsonify({"predictions": resistance_status})

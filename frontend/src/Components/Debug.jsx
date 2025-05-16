@@ -8,7 +8,10 @@ function Debug() {
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
 	const [model, setmodel] = useState("");
-	const [displayText, setDisplayText] = useState("Debugging !!!!!!!!!!!!!!!");
+	const [displayText, setDisplayText] = useState("Loading recommendations...");
+	const [cultures, setCultures] = useState([]);
+	
+
 
 	const handleSubmit = async () => {
 		if (!patientType || !gender || !age || !specimenType || !model) {
@@ -24,9 +27,9 @@ function Debug() {
 		try {
 			const response = await axios.post("http://localhost:5005/predict_hero", {
 				type: patientType,
-				//cultureType: cultureType,
 				specimenType: specimenType,
 				gender: gender,
+				culture: cultureType,
 				model: model,
 				age: parseInt(age, 10),
 			});
@@ -40,42 +43,16 @@ function Debug() {
 						<thead className="bg-white bg-opacity-10 text-white">
 							<tr>
 								<th className="py-2 px-4 border-b">Antibiotic</th>
-								<th className="py-2 px-4 border-b">Status</th>
-								<th className="py-2 px-4 border-b">Resistance (%)</th>
-								<th className="py-2 px-4 border-b">Sensitive (%)</th>
-								<th className="py-2 px-4 border-b">Antibiotic not used (%)</th>
-								<th className="py-2 px-4 border-b">Resistant Count</th>
-								<th className="py-2 px-4 border-b">Sensitive Count</th>
-								<th className="py-2 px-4 border-b">
-									Antibiotic not tested Count
-								</th>
+								<th className="py-2 px-4 border-b">Accuracy</th>
+								<th className="py-2 px-4 border-b">Sensitivity</th>
 							</tr>
 						</thead>
 						<tbody>
 							{response.data.predictions.map((item, index) => (
 								<tr key={index} className="hover:bg-gray-700">
 									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
-									<td className="py-2 px-4 border-b font-semibold">
-										{item.resistance_status}
-									</td>
-									<td className="py-2 px-4 border-b bg-red-500 bg-opacity-50">
-										{item.resistance}%
-									</td>
-									<td className="py-2 px-4 border-b bg-green-500 bg-opacity-50">
-										{item.sensitive}%
-									</td>
-									<td className="py-2 px-4 border-b bg-yellow-500 bg-opacity-50">
-										{item.notused}%
-									</td>
-									<td className="py-2 px-4 border-b">
-										{item.total_resistant_patients}
-									</td>
-									<td className="py-2 px-4 border-b">
-										{item.total_sensitive_patients}
-									</td>
-									<td className="py-2 px-4 border-b">
-										{item.total_notused_patients}
-									</td>
+									<td className="py-2 px-4 border-b">{item.matrix.accuracy?.toFixed(2)}</td>
+									<td className="py-2 px-4 border-b">{item.matrix.sensitivity?.toFixed(2)}</td>
 								</tr>
 							))}
 						</tbody>
@@ -135,9 +112,9 @@ function Debug() {
 							<option value="" disabled>
 								Select Culture
 							</option>
-							<option value="Urine">Escherichia Coli</option>
-							<option value="Stool">Klebsiella Pneumoniae</option>
-							<option value="Blood">Yeast Candida</option>
+							<option value="Escherichia coli">Escherichia Coli</option>
+							<option value="Klebsiella pneumoniae">Klebsiella Pneumoniae</option>
+							<option value="Yeast Candida">Yeast Candida</option>
 						</select>
 
 						<p className="text-white text-xl mt-4">Enter Gender of Patient</p>

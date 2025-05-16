@@ -27,7 +27,6 @@ function Hero() {
 		try {
 			const response = await axios.post("http://localhost:5005/predict_hero", {
 				type: patientType,
-				//cultureType: cultureType,
 				specimenType: specimenType,
 				gender: gender,
 				culture: cultureType,
@@ -80,6 +79,7 @@ function Hero() {
 									<td className="py-2 px-4 border-b">
 										{item.total_notused_patients}
 									</td>
+									
 								</tr>
 							))}
 						</tbody>
