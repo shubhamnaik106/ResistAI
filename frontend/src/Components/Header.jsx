@@ -36,13 +36,13 @@ function Header({ setActiveSection }) {
 		},
 		{
 			id: 5,
-			title: "ABOUT",
-			action: () => setActiveSection("about"),
+			title: "DATA PROCESSING",
+			action: () => setActiveSection("data"),
 		},
 		{
 			id: 6,
-			title: "DATA PROCESSING",
-			action: () => setActiveSection("data"),
+			title: "ABOUT",
+			action: () => setActiveSection("about"),
 		},
 	];
 
@@ -53,7 +53,7 @@ function Header({ setActiveSection }) {
 
 	return (
 		<div className="flex items-center justify-end md:justify-center sticky top-0 pt-5 z-10">
-			<p className="text-orange-500 text-5xl font-bold mr-auto">ResistAI</p>
+			<p className="text-orange-500 text-6xl font-bold mr-auto">ResistAI</p>
 			<div className="hidden md:flex gap-4 backdrop-blur-lg bg-white shadow-xl sm:rounded-3xl py-2 px-4 bg-clip-padding bg-opacity-10">
 				{menuList.map((item) => (
 					<div key={item.id}>
@@ -62,7 +62,7 @@ function Header({ setActiveSection }) {
 								item.action();
 								handleClose();
 							}}
-							className="text-light_cyan transition-transform duration-500 hover:scale-110 border-[2px] border-transparent hover:border-[2px] hover:bg-orange-500 hover:border-white rounded-full text-[15px] px-6 py-1 cursor-pointer"
+							className="text-orange-300 font-bold transition-transform duration-500 hover:scale-110 border-[2px] border-transparent hover:border-[2px] hover:bg-orange-500 hover:border-white rounded-full text-xl px-6 py-1 cursor-pointer"
 						>
 							{item.title}
 						</h2>
