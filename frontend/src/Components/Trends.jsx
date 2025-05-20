@@ -170,7 +170,7 @@ function Trends() {
 				</button>
 			</div>
 
-			<div className="w-full h-[450px]">
+			<div className="w-full h-[300px] md:h-[450px]">
 				{chartData.length > 0 ? (
 					<ResponsiveContainer width="100%" height="100%">
 						<LineChart

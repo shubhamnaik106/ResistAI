@@ -10,8 +10,6 @@ function Hero() {
 	const [model, setmodel] = useState("");
 	const [displayText, setDisplayText] = useState("Loading recommendations...");
 	const [cultures, setCultures] = useState([]);
-	
-
 
 	const handleSubmit = async () => {
 		if (!patientType || !gender || !age || !specimenType || !model) {
@@ -79,7 +77,6 @@ function Hero() {
 									<td className="py-2 px-4 border-b">
 										{item.total_notused_patients}
 									</td>
-									
 								</tr>
 							))}
 						</tbody>
@@ -140,7 +137,9 @@ function Hero() {
 								Select Culture
 							</option>
 							<option value="Escherichia coli">Escherichia Coli</option>
-							<option value="Klebsiella pneumoniae">Klebsiella Pneumoniae</option>
+							<option value="Klebsiella pneumoniae">
+								Klebsiella Pneumoniae
+							</option>
 							<option value="Yeast Candida">Yeast Candida</option>
 						</select>
 

@@ -8,10 +8,8 @@ function Debug() {
 	const [gender, setGender] = useState("");
 	const [age, setAge] = useState("");
 	const [model, setmodel] = useState("");
-	const [displayText, setDisplayText] = useState("Loading recommendations...");
+	const [displayText, setDisplayText] = useState("Debuging !!!!!!!!!!!!!!!!!!");
 	const [cultures, setCultures] = useState([]);
-	
-
 
 	const handleSubmit = async () => {
 		if (!patientType || !gender || !age || !specimenType || !model) {
@@ -51,8 +49,12 @@ function Debug() {
 							{response.data.predictions.map((item, index) => (
 								<tr key={index} className="hover:bg-gray-700">
 									<td className="py-2 px-4 border-b">{item.antibiotic}</td>
-									<td className="py-2 px-4 border-b">{item.matrix.accuracy?.toFixed(2)}</td>
-									<td className="py-2 px-4 border-b">{item.matrix.sensitivity?.toFixed(2)}</td>
+									<td className="py-2 px-4 border-b">
+										{item.matrix.accuracy?.toFixed(2)}
+									</td>
+									<td className="py-2 px-4 border-b">
+										{item.matrix.sensitivity?.toFixed(2)}
+									</td>
 								</tr>
 							))}
 						</tbody>
@@ -113,7 +115,9 @@ function Debug() {
 								Select Culture
 							</option>
 							<option value="Escherichia coli">Escherichia Coli</option>
-							<option value="Klebsiella pneumoniae">Klebsiella Pneumoniae</option>
+							<option value="Klebsiella pneumoniae">
+								Klebsiella Pneumoniae
+							</option>
 							<option value="Yeast Candida">Yeast Candida</option>
 						</select>
 
