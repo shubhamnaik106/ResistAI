@@ -12,15 +12,15 @@ function Debug() {
 	const [cultures, setCultures] = useState([]);
 
 	const handleSubmit = async () => {
-		if (!patientType || !gender || !age || !specimenType || !model) {
-			alert("Please fill in all the fields before submitting.");
-			return;
-		}
+		// if (!patientType || !gender || !age || !specimenType || !model) {
+		// 	alert("Please fill in all the fields before submitting.");
+		// 	return;
+		// }
 
-		if (age <= 40 || age >= 80) {
-			alert("Age must be between 40 and 80 for best results.");
-			return;
-		}
+		// if (age <= 40 || age >= 80) {
+		// 	alert("Age must be between 40 and 80 for best results.");
+		// 	return;
+		// }
 
 		try {
 			const response = await axios.post("http://localhost:5005/predict_hero", {

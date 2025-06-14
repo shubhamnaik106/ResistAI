@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -278,6 +279,52 @@ def train_SVM():
     
     return pipeline, y_train.columns, metrics
 
+def train_NB():
+    data = pd.read_excel('Urine Dataset.xlsx')
+    data['Sex'] = data['Sex'].astype(str)
+    data['Specimen_Type'] = data['Specimen_Type'].astype(str)
+    data['Culture'] = data['Culture'].astype(str)
+    data['Age_Group'] = data['Age'].apply(get_age_group)
+
+    features = ['Year', 'Sex', 'Specimen_Type', 'Culture', 'Age_Group']
+    targets = data.columns[5:]
+
+    X = data[features]
+    y = data[targets].apply(pd.to_numeric, errors='coerce').dropna(axis=1)
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), ['Year']),
+            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), ['Sex', 'Specimen_Type', 'Culture', 'Age_Group'])
+        ]
+    )
+
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('classifier', MultiOutputClassifier(GaussianNB()))
+    ])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    # Drop columns with only one class (not suitable for classification)
+    single_class_targets = [col for col in y_train.columns if len(y_train[col].unique()) == 1]
+    y_train = y_train.drop(columns=single_class_targets, errors='ignore')
+    y_test = y_test.drop(columns=single_class_targets, errors='ignore')
+
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+
+    metrics = [
+        {
+            "antibiotic": col,
+            "accuracy": accuracy_score(y_test[col], y_pred[:, i]),
+            "sensitivity": recall_score(y_test[col], y_pred[:, i], average="macro")
+        }
+        for i, col in enumerate(y_train.columns)
+    ]
+
+    return pipeline, y_train.columns, metrics
+
 
 
 @app.route("/predict_hero", methods=["POST"])
@@ -285,7 +332,7 @@ def predict_hero():
     data = request.get_json()
     print("Received JSON Data:", data)
     print("returned age ",data['age']) 
-    model_type = data["model"] # Model selection
+    model_type = data.get("model","nb") # Model selection
     
     # Map gender to match dataset values
     sex_mapping = {'Male': '1', 'Female': '0'}
@@ -331,6 +378,8 @@ def predict_hero():
         pipeline, target_columns, metrics = train_KNN()
     elif model_type == 'rf':
         pipeline, target_columns, metrics =  train_RD()
+    elif model_type == 'nb':
+        pipeline, target_columns, metrics =  train_NB()
     else:
         pipeline, target_columns, metrics = train_SVM()
     # Perform prediction

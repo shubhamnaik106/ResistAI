@@ -180,6 +180,7 @@ function Hero() {
 							<option value="rf">Random Forest</option>
 							<option value="lr">LR</option>
 							<option value="xgb">XGboost</option>
+							<option value="nb">NB</option>
 						</select>
 
 						<button
