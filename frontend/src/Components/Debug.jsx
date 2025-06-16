@@ -43,6 +43,7 @@ function Debug() {
 								<th className="py-2 px-4 border-b">Antibiotic</th>
 								<th className="py-2 px-4 border-b">Accuracy</th>
 								<th className="py-2 px-4 border-b">Sensitivity</th>
+								<th className="py-2 px-4 border-b">ROC</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -54,6 +55,9 @@ function Debug() {
 									</td>
 									<td className="py-2 px-4 border-b">
 										{item.matrix.sensitivity?.toFixed(2)}
+									</td>
+									<td className="py-2 px-4 border-b">
+										{item.matrix.roc_auc?.toFixed(2)}
 									</td>
 								</tr>
 							))}
@@ -158,6 +162,7 @@ function Debug() {
 							<option value="rf">Random Forest</option>
 							<option value="lr">LR</option>
 							<option value="xgb">XGboost</option>
+							<option value="nb">Naive-Bayes</option>
 						</select>
 
 						<button

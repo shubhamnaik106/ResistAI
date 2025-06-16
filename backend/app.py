@@ -5,6 +5,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.preprocessing import label_binarize
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.multioutput import MultiOutputClassifier
@@ -89,11 +91,40 @@ def train_XGB():
     pipeline.fit(X_train, y_train)
 
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
+
     metrics = []
     for i, col in enumerate(y_train.columns):
-        accuracy = accuracy_score(y_test[col], y_pred[:, i])
-        sensitivity = recall_score(y_test[col], y_pred[:, i],average="macro")
-        metrics.append({"antibiotic": col, "accuracy": accuracy, "sensitivity": sensitivity})
+        y_true = y_test[col]
+        y_hat = y_pred[:, i]
+        y_score = y_proba[i][:, 1] if len(y_proba[i].shape) > 1 else y_proba[i]  # binary class probs
+        class_labels = np.unique(y_true)
+        # Sensitivity (recall), Accuracy, FPR
+        sensitivity = recall_score(y_true, y_hat, average="macro")
+        accuracy = accuracy_score(y_true, y_hat)
+        try:
+            if len(class_labels) > 2:
+                y_true_bin = label_binarize(y_true, classes=class_labels)
+                auc_roc = roc_auc_score(y_true_bin, y_proba[i], multi_class='ovr')
+            else:
+                auc_roc = roc_auc_score(y_true, y_score)
+                fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        # FROC interpretation: Use FPR as proxy
+        print(f"Antibiotic: {col}, ROC AUC: {auc_roc}")
+        metrics.append({
+            "antibiotic": col,
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
+    
     
     return pipeline, y_train.columns, metrics
 
@@ -133,15 +164,40 @@ def train_LR():
 
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
 
-    metrics = [
-        {
+    metrics = []
+    for i, col in enumerate(y_train.columns):
+        y_true = y_test[col]
+        y_hat = y_pred[:, i]
+        y_score = y_proba[i][:, 1] if len(y_proba[i].shape) > 1 else y_proba[i]  # binary class probs
+        class_labels = np.unique(y_true)
+        # Sensitivity (recall), Accuracy, FPR
+        sensitivity = recall_score(y_true, y_hat, average="macro")
+        accuracy = accuracy_score(y_true, y_hat)
+        try:
+            if len(class_labels) > 2:
+                y_true_bin = label_binarize(y_true, classes=class_labels)
+                auc_roc = roc_auc_score(y_true_bin, y_proba[i], multi_class='ovr')
+            else:
+                auc_roc = roc_auc_score(y_true, y_score)
+                fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        # FROC interpretation: Use FPR as proxy
+        print(f"Antibiotic: {col}, ROC AUC: {auc_roc}")
+        metrics.append({
             "antibiotic": col,
-            "accuracy": accuracy_score(y_test[col], y_pred[:, i]),
-            "sensitivity": recall_score(y_test[col], y_pred[:, i], average="macro")
-        }
-        for i, col in enumerate(y_train.columns)
-    ]
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
+    
 
     return pipeline, y_train.columns, metrics
 
@@ -180,12 +236,40 @@ def train_KNN():
     
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
+
+    metrics = []
+    for i, col in enumerate(y_train.columns):
+        y_true = y_test[col]
+        y_hat = y_pred[:, i]
+        y_score = y_proba[i][:, 1] if len(y_proba[i].shape) > 1 else y_proba[i]  # binary class probs
+        class_labels = np.unique(y_true)
+        # Sensitivity (recall), Accuracy, FPR
+        sensitivity = recall_score(y_true, y_hat, average="macro")
+        accuracy = accuracy_score(y_true, y_hat)
+        try:
+            if len(class_labels) > 2:
+                y_true_bin = label_binarize(y_true, classes=class_labels)
+                auc_roc = roc_auc_score(y_true_bin, y_proba[i], multi_class='ovr')
+            else:
+                auc_roc = roc_auc_score(y_true, y_score)
+                fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        # FROC interpretation: Use FPR as proxy
+        print(f"Antibiotic: {col}, ROC AUC: {auc_roc}")
+        metrics.append({
+            "antibiotic": col,
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
     
-    metrics = [
-{"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
-}
-        for i, col in enumerate(y_train.columns)
-    ]
     
     return pipeline, y_train.columns, metrics
 
@@ -225,12 +309,40 @@ def train_RD():
     
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
+
+    metrics = []
+    for i, col in enumerate(y_train.columns):
+        y_true = y_test[col]
+        y_hat = y_pred[:, i]
+        y_score = y_proba[i][:, 1] if len(y_proba[i].shape) > 1 else y_proba[i]  # binary class probs
+        class_labels = np.unique(y_true)
+        # Sensitivity (recall), Accuracy, FPR
+        sensitivity = recall_score(y_true, y_hat, average="macro")
+        accuracy = accuracy_score(y_true, y_hat)
+        try:
+            if len(class_labels) > 2:
+                y_true_bin = label_binarize(y_true, classes=class_labels)
+                auc_roc = roc_auc_score(y_true_bin, y_proba[i], multi_class='ovr')
+            else:
+                auc_roc = roc_auc_score(y_true, y_score)
+                fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        # FROC interpretation: Use FPR as proxy
+        print(f"Antibiotic: {col}, ROC AUC: {auc_roc}")
+        metrics.append({
+            "antibiotic": col,
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
     
-    metrics = [
-{"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
-}
-        for i, col in enumerate(y_train.columns)
-    ]
     
     return pipeline, y_train.columns, metrics
 
@@ -270,12 +382,40 @@ def train_SVM():
     
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
+
+    metrics = []
+    for i, col in enumerate(y_train.columns):
+        y_true = y_test[col]
+        y_hat = y_pred[:, i]
+        y_score = y_proba[i][:, 1] if len(y_proba[i].shape) > 1 else y_proba[i]  # binary class probs
+        class_labels = np.unique(y_true)
+        # Sensitivity (recall), Accuracy, FPR
+        sensitivity = recall_score(y_true, y_hat, average="macro")
+        accuracy = accuracy_score(y_true, y_hat)
+        try:
+            if len(class_labels) > 2:
+                y_true_bin = label_binarize(y_true, classes=class_labels)
+                auc_roc = roc_auc_score(y_true_bin, y_proba[i], multi_class='ovr')
+            else:
+                auc_roc = roc_auc_score(y_true, y_score)
+                fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        # FROC interpretation: Use FPR as proxy
+        print(f"Antibiotic: {col}, ROC AUC: {auc_roc}")
+        metrics.append({
+            "antibiotic": col,
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
     
-    metrics = [
-        {"antibiotic": col, "accuracy": accuracy_score(y_test[col], y_pred[:, i]), "sensitivity" : recall_score(y_test[col], y_pred[:, i], average="macro")  # or "weighted"
-}
-        for i, col in enumerate(y_train.columns)
-    ]
     
     return pipeline, y_train.columns, metrics
 
@@ -313,15 +453,40 @@ def train_NB():
 
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
 
-    metrics = [
-        {
+    metrics = []
+    for i, col in enumerate(y_train.columns):
+        y_true = y_test[col]
+        y_hat = y_pred[:, i]
+        y_score = y_proba[i][:, 1] if len(y_proba[i].shape) > 1 else y_proba[i]  # binary class probs
+        class_labels = np.unique(y_true)
+        # Sensitivity (recall), Accuracy, FPR
+        sensitivity = recall_score(y_true, y_hat, average="macro")
+        accuracy = accuracy_score(y_true, y_hat)
+        try:
+            if len(class_labels) > 2:
+                y_true_bin = label_binarize(y_true, classes=class_labels)
+                auc_roc = roc_auc_score(y_true_bin, y_proba[i], multi_class='ovr')
+            else:
+                auc_roc = roc_auc_score(y_true, y_score)
+                fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        # FROC interpretation: Use FPR as proxy
+        print(f"Antibiotic: {col}, ROC AUC: {auc_roc}")
+        metrics.append({
             "antibiotic": col,
-            "accuracy": accuracy_score(y_test[col], y_pred[:, i]),
-            "sensitivity": recall_score(y_test[col], y_pred[:, i], average="macro")
-        }
-        for i, col in enumerate(y_train.columns)
-    ]
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
+    
 
     return pipeline, y_train.columns, metrics
 
