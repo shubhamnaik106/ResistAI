@@ -16,7 +16,10 @@ from sklearn.metrics import accuracy_score, recall_score
 from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
 from flask_cors import CORS
-
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
+import tensorflow.keras.backend as K
 import os
 import docx
 import csv
@@ -128,7 +131,106 @@ def train_XGB():
     
     return pipeline, y_train.columns, metrics
 
+def train_DNN():
+    data = pd.read_excel('Urine Dataset.xlsx')
+    data['Sex'] = data['Sex'].astype(str)
+    data['Specimen_Type'] = data['Specimen_Type'].astype(str)
+    data['Culture'] = data['Culture'].astype(str)
+    data['Age_Group'] = data['Age'].apply(get_age_group)
 
+    features = ['Year', 'Sex', 'Specimen_Type', 'Culture', 'Age_Group']
+    targets = data.columns[5:]
+
+    X = data[features]
+    y = data[targets].apply(pd.to_numeric, errors='coerce').dropna(axis=1)
+    
+    # Drop columns with only one class
+    single_class_targets = [col for col in y.columns if len(y[col].unique()) == 1]
+    y = y.drop(columns=single_class_targets)
+
+    # Preprocessing pipeline
+    preprocessor = ColumnTransformer([
+        ('num', StandardScaler(), ['Year']),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type', 'Culture', 'Age_Group'])
+    ])
+
+    # Encode X
+    X_encoded = preprocessor.fit_transform(X).toarray()
+
+    X_train, X_test, y_train, y_test = train_test_split(X_encoded, y.values, test_size=0.3, random_state=42)
+
+    # Build the model
+    model = Sequential([
+        Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
+        Dropout(0.3),
+        Dense(64, activation='relu'),
+        Dropout(0.3),
+        Dense(y.shape[1], activation='sigmoid')  # multi-label
+    ])
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    early_stop = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+
+    model.fit(X_train, y_train, validation_split=0.1, epochs=50, batch_size=32, callbacks=[early_stop], verbose=0)
+
+    # Predict
+    y_pred_prob = model.predict(X_test)
+    y_pred = np.where(y_pred_prob > 0.5, 1,
+                 np.where(y_pred_prob < 0.5, -1, 0)).astype(int)
+
+    # Compute metrics for each target
+    metrics = []
+    for i, col in enumerate(y.columns):
+        y_true = y_test[:, i]
+        y_hat = y_pred[:, i]
+        y_score = y_pred_prob[:, i]
+
+        try:
+            auc_roc = roc_auc_score(y_true, y_score)
+            fpr, tpr, _ = roc_curve(y_true, y_score)
+        except ValueError:
+            auc_roc = 0
+            fpr = [0]
+
+        try:
+            sensitivity = recall_score(y_true, y_hat, average='macro')  # Fix here
+        except ValueError:
+            sensitivity = 0.0
+
+        accuracy = accuracy_score(y_true, y_hat)
+
+        print(f"\nAntibiotic: {col}")
+        print(f"Accuracy: {accuracy:.3f}, ROC AUC: {auc_roc:.3f}")
+
+        metrics.append({
+            "antibiotic": col,
+            "accuracy": accuracy,
+            "sensitivity": sensitivity,
+            "roc_auc": auc_roc
+        })
+
+    # Define DNN pipeline wrapper for compatibility
+    class DNNPipeline:
+        def __init__(self, model, preprocessor):
+            self.model = model
+            self.preprocessor = preprocessor
+
+        def predict(self, X):
+            X_enc = self.preprocessor.transform(X).toarray()
+            y_pred_prob = self.model.predict(X_enc)
+            return np.where(y_pred_prob > 0.5, 1,
+                 np.where(y_pred_prob < 0.5, -1, 0)).astype(int)
+
+        def predict_proba(self, X):
+            X_enc = self.preprocessor.transform(X).toarray()
+            return self.model.predict(X_enc)
+
+        def fit(self, X, y):
+            pass  # already fitted
+
+    pipeline = DNNPipeline(model, preprocessor)
+
+    return pipeline, y.columns, metrics
 
 def train_LR():
     data = pd.read_excel('Urine Dataset.xlsx')
@@ -497,7 +599,7 @@ def predict_hero():
     data = request.get_json()
     print("Received JSON Data:", data)
     print("returned age ",data['age']) 
-    model_type = data.get("model","nb") # Model selection
+    model_type = data.get("model","dnn") # Model selection
     
     # Map gender to match dataset values
     sex_mapping = {'Male': '1', 'Female': '0'}
@@ -545,6 +647,8 @@ def predict_hero():
         pipeline, target_columns, metrics =  train_RD()
     elif model_type == 'nb':
         pipeline, target_columns, metrics =  train_NB()
+    elif model_type == 'dnn':
+        pipeline, target_columns, metrics =  train_DNN()
     else:
         pipeline, target_columns, metrics = train_SVM()
     # Perform prediction
@@ -644,15 +748,15 @@ def predict_hero():
         else:
             status = "Resistant"
 
-        if status == "Sensitive":
-            if resistance_R>sensitive_S:
-                status = "Resistant"
+        # if status == "Sensitive":
+        #     if resistance_R>sensitive_S:
+        #         status = "Resistant"
 
-        elif status == "Resistant":
-            if sensitive_S>resistance_R:
-                status = "Sensitive"
-            elif sensitive_S == resistance_R:
-                status = "Sensitive"
+        # elif status == "Resistant":
+        #     if sensitive_S>resistance_R:
+        #         status = "Sensitive"
+        #     elif sensitive_S == resistance_R:
+        #         status = "Sensitive"
                 
            
 
