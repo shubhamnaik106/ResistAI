@@ -17,7 +17,7 @@ from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
 from flask_cors import CORS
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense, Dropout, Input, Reshape, TimeDistributed
 from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow.keras.backend as K
 import os
@@ -142,59 +142,74 @@ def train_DNN():
     targets = data.columns[5:]
 
     X = data[features]
-    y = data[targets].apply(pd.to_numeric, errors='coerce').dropna(axis=1)
-    
-    # Drop columns with only one class
-    single_class_targets = [col for col in y.columns if len(y[col].unique()) == 1]
-    y = y.drop(columns=single_class_targets)
+    y_raw = data[targets].apply(pd.to_numeric, errors='coerce').dropna(axis=1)
 
-    # Preprocessing pipeline
+    # Drop target columns with only one unique class
+    single_class_targets = [col for col in y_raw.columns if len(y_raw[col].unique()) == 1]
+    y_raw = y_raw.drop(columns=single_class_targets)
+
+    # Preprocessing for input features
     preprocessor = ColumnTransformer([
         ('num', StandardScaler(), ['Year']),
         ('cat', OneHotEncoder(handle_unknown='ignore'), ['Sex', 'Specimen_Type', 'Culture', 'Age_Group'])
     ])
-
-    # Encode X
     X_encoded = preprocessor.fit_transform(X).toarray()
 
-    X_train, X_test, y_train, y_test = train_test_split(X_encoded, y.values, test_size=0.3, random_state=42)
+    # Encode y to one-hot vectors per column (multi-label multiclass)
+    categories = [[-1, 0, 1]]
+    y_reshaped = np.stack([
+        OneHotEncoder(sparse_output=False, categories=categories).fit_transform(y_raw[col].values.reshape(-1, 1))
+        for col in y_raw.columns
+    ], axis=1)
 
-    # Build the model
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X_encoded, y_reshaped, test_size=0.3, random_state=42)
+
+    # Model building
+    input_shape = X_train.shape[1]
+    num_labels = y_raw.shape[1]
+
     model = Sequential([
-        Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
+        Input(shape=(input_shape,)),
+        Dense(128, activation='relu'),
         Dropout(0.3),
         Dense(64, activation='relu'),
         Dropout(0.3),
-        Dense(y.shape[1], activation='sigmoid')  # multi-label
+        Dense(num_labels * 3),
+        Reshape((num_labels, 3)),
+        TimeDistributed(Dense(3, activation='softmax'))
     ])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
     early_stop = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
     model.fit(X_train, y_train, validation_split=0.1, epochs=50, batch_size=32, callbacks=[early_stop], verbose=0)
 
-    # Predict
-    y_pred_prob = model.predict(X_test)
-    y_pred = np.where(y_pred_prob > 0.5, 1,
-                 np.where(y_pred_prob < 0.5, -1, 0)).astype(int)
+    # Predict on test set
+    y_pred_prob = model.predict(X_test)  # shape: (samples, labels, 3)
+    y_pred = np.argmax(y_pred_prob, axis=-1)
 
-    # Compute metrics for each target
+    # Map back to original class values
+    inverse_class_map = {0: -1, 1: 0, 2: 1}
+    y_pred_mapped = np.vectorize(inverse_class_map.get)(y_pred)
+    y_test_mapped = np.vectorize(inverse_class_map.get)(np.argmax(y_test, axis=-1))
+
+    # Evaluation
     metrics = []
-    for i, col in enumerate(y.columns):
-        y_true = y_test[:, i]
-        y_hat = y_pred[:, i]
-        y_score = y_pred_prob[:, i]
+    for i, col in enumerate(y_raw.columns):
+        y_true = y_test_mapped[:, i]
+        y_hat = y_pred_mapped[:, i]
+        y_score = y_pred_prob[:, i, 2]  # probability of class 1
 
         try:
-            auc_roc = roc_auc_score(y_true, y_score)
-            fpr, tpr, _ = roc_curve(y_true, y_score)
-        except ValueError:
-            auc_roc = 0
-            fpr = [0]
+            auc_roc = roc_auc_score(label_binarize(y_true, classes=[-1, 0, 1]), y_pred_prob[:, i])
+        except:
+            auc_roc = 0.0
 
         try:
-            sensitivity = recall_score(y_true, y_hat, average='macro')  # Fix here
-        except ValueError:
+            sensitivity = recall_score(y_true, y_hat, average='macro')
+        except:
             sensitivity = 0.0
 
         accuracy = accuracy_score(y_true, y_hat)
@@ -209,28 +224,8 @@ def train_DNN():
             "roc_auc": auc_roc
         })
 
-    # Define DNN pipeline wrapper for compatibility
-    class DNNPipeline:
-        def __init__(self, model, preprocessor):
-            self.model = model
-            self.preprocessor = preprocessor
+    return  model, preprocessor, y_raw.columns, metrics
 
-        def predict(self, X):
-            X_enc = self.preprocessor.transform(X).toarray()
-            y_pred_prob = self.model.predict(X_enc)
-            return np.where(y_pred_prob > 0.5, 1,
-                 np.where(y_pred_prob < 0.5, -1, 0)).astype(int)
-
-        def predict_proba(self, X):
-            X_enc = self.preprocessor.transform(X).toarray()
-            return self.model.predict(X_enc)
-
-        def fit(self, X, y):
-            pass  # already fitted
-
-    pipeline = DNNPipeline(model, preprocessor)
-
-    return pipeline, y.columns, metrics
 
 def train_LR():
     data = pd.read_excel('Urine Dataset.xlsx')
@@ -639,21 +634,42 @@ def predict_hero():
     # Select the model pipeline
     if model_type == 'lr':
         pipeline, target_columns, metrics = train_LR()
+        new_prediction = pipeline.predict(new_patient)[0]
+        prediction = dict(zip(target_columns, new_prediction))
     elif model_type == 'xgb':
         pipeline, target_columns, metrics = train_XGB()
+        new_prediction = pipeline.predict(new_patient)[0]
+        prediction = dict(zip(target_columns, new_prediction))
     elif model_type == 'knn':
         pipeline, target_columns, metrics = train_KNN()
+        new_prediction = pipeline.predict(new_patient)[0]
+        prediction = dict(zip(target_columns, new_prediction))
     elif model_type == 'rf':
         pipeline, target_columns, metrics =  train_RD()
+        new_prediction = pipeline.predict(new_patient)[0]
+        prediction = dict(zip(target_columns, new_prediction))
     elif model_type == 'nb':
         pipeline, target_columns, metrics =  train_NB()
+        new_prediction = pipeline.predict(new_patient)[0]
+        prediction = dict(zip(target_columns, new_prediction))
     elif model_type == 'dnn':
-        pipeline, target_columns, metrics =  train_DNN()
+        model, preprocessor, target_columns, metrics = train_DNN()
+        X_new = preprocessor.transform(new_patient).toarray()
+
+        # Predict probabilities and convert to class labels
+        y_pred_prob = model.predict(X_new)
+        y_pred = np.argmax(y_pred_prob, axis=-1)
+
+        # Map 0,1,2 → -1,0,1
+        inverse_class_map = {0: -1, 1: 0, 2: 1}
+        new_prediction = np.vectorize(inverse_class_map.get)(y_pred[0])
+
     else:
         pipeline, target_columns, metrics = train_SVM()
-    # Perform prediction
-    new_prediction = pipeline.predict(new_patient)[0]
+        new_prediction = pipeline.predict(new_patient)[0]
     prediction = dict(zip(target_columns, new_prediction))
+    # Perform prediction
+    
     #print("Target Columns:", target_columns)
     #print("Prediction Dictionary:", prediction)
     
@@ -748,15 +764,15 @@ def predict_hero():
         else:
             status = "Resistant"
 
-        # if status == "Sensitive":
-        #     if resistance_R>sensitive_S:
-        #         status = "Resistant"
+        if status == "Sensitive":
+            if resistance_R>sensitive_S:
+                status = "Resistant"
 
-        # elif status == "Resistant":
-        #     if sensitive_S>resistance_R:
-        #         status = "Sensitive"
-        #     elif sensitive_S == resistance_R:
-        #         status = "Sensitive"
+        elif status == "Resistant":
+            if sensitive_S>resistance_R:
+                status = "Sensitive"
+            elif sensitive_S == resistance_R:
+                status = "Sensitive"
                 
            
 
